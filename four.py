@@ -9,22 +9,14 @@ def generate_numerical_data():
     while True:
         # Generate various types of numerical data
         data = {
-            "timestamp": time.time(),
-            "random_values": np.random.rand(10).tolist(),  # 10 random values 0-1
-            "sine_wave": [float(np.sin(i * 0.1 + time.time())) for i in range(20)],
-            "single_value": float(np.random.uniform(0, 100)),
-            "quantum_simulation": {
-                "amplitude": float(np.random.rand()),
-                "phase": float(np.random.uniform(0, 2 * np.pi)),
-                "frequency": float(np.random.uniform(1, 10))
-            }
+            "entanglement": np.random.rand(4).tolist(),  # four random values [0, 1]
         }
         
         # Output as JSON (Node.js will parse this)
         print(json.dumps(data), flush=True)
         
         # Wait before sending next batch (adjust for your needs)
-        time.sleep(0.1)  # 10 times per second
+        time.sleep(1)  # 1 times per second
 
 if __name__ == "__main__":
     try:
