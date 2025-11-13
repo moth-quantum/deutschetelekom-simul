@@ -2,6 +2,7 @@ const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const { spawn } = require('child_process');
+const readline = require('readline'); // <-- ADDED
 
 const app = express();
 const httpServer = createServer(app);
@@ -23,41 +24,49 @@ app.get('/', (req, res) => {
 let pythonProcess = null;
 
 // Function to start Python script and stream data
-function startPythonStream(socket) {
+// REMOVED 'socket' parameter
+function startPythonStream() {
   if (pythonProcess) {
     console.log('Python process already running');
     return;
   }
 
+  console.log('Starting Python script...');
   const args = ['four.py'];
-  pythonProcess = spawn('python3', args);
-  
-  pythonProcess.stdout.setEncoding('utf8');
-  pythonProcess.stdout.on('data', (data) => {
+  // CHANGED to 'python' for Heroku
+  pythonProcess = spawn('python', args);
+
+  // --- FIXED: Use readline to handle stream buffering ---
+  const rl = readline.createInterface({ input: pythonProcess.stdout });
+
+  rl.on('line', (line) => {
     try {
-      // Try to parse as JSON (if Python sends JSON)
-      const parsed = JSON.parse(data.trim());
+      const parsed = JSON.parse(line);
       console.log('Emitting data:', parsed);
       // Emit to all connected clients (TouchDesigner)
       io.emit('numerical_data', parsed);
     } catch (e) {
-      // If not JSON, send as raw data
-      console.log('Raw data:', data);
-      io.emit('numerical_data', { raw: data.trim() });
+      console.warn('Python script produced non-JSON line:', line);
     }
   });
+  // --- End of readline fix ---
 
-  pythonProcess.stderr.setEncoding('utf8');
   pythonProcess.stderr.on('data', (data) => {
-    console.error(`Python error: ${data}`);
-    io.emit('error', { message: data });
+    // FIXED: Convert buffer to string
+    const errorMsg = data.toString();
+    console.error(`Python stderr: ${errorMsg}`);
+    io.emit('error', { message: errorMsg });
   });
 
   pythonProcess.on('exit', (code) => {
     console.log(`Python script exited with code ${code}`);
     pythonProcess = null;
-    // Restart after a delay
-    setTimeout(() => startPythonStream(socket), 2000);
+    
+    // FIXED: Only restart if clients are still connected
+    if (io.engine.clientsCount > 0) {
+      console.log('Clients still connected, restarting script in 2s...');
+      setTimeout(startPythonStream, 2000); // No 'socket' passed
+    }
   });
 }
 
@@ -65,16 +74,17 @@ function startPythonStream(socket) {
 io.on('connection', (socket) => {
   console.log('TouchDesigner client connected:', socket.id);
   
-  // Start Python data stream when first client connects
-  if (io.engine.clientsCount === 1) {
-    startPythonStream(socket);
+  // Start Python data stream if it's not already running
+  if (!pythonProcess) {
+    startPythonStream(); // No 'socket' passed
   }
 
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
     
-    // Stop Python process when no clients connected
+    // Stop Python process when no clients are connected
     if (io.engine.clientsCount === 0 && pythonProcess) {
+      console.log('Last client disconnected, stopping Python process.');
       pythonProcess.kill();
       pythonProcess = null;
     }
@@ -84,12 +94,13 @@ io.on('connection', (socket) => {
   socket.on('request_data', () => {
     console.log('Data requested by client');
     if (!pythonProcess) {
-      startPythonStream(socket);
+      startPythonStream(); // No 'socket' passed
     }
   });
 });
 
 httpServer.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
-  console.log(`Connect TouchDesigner to: ${process.env.HEROKU_APP_NAME ? 'https://' + process.env.HEROKU_APP_NAME + '.herokuapp.com' : 'http://localhost:' + PORT}`);
+  // Simplified this log, as the Heroku URL is just the app's URL
+  console.log(`Connect TouchDesigner to your Heroku app's https://... URL`);
 });
