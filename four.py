@@ -1,17 +1,35 @@
-from ast import arg
 import time
-import numpy
-import argparse
+import json
+import numpy as np
+import sys
 
-parser = argparse.ArgumentParser(description='test')
-parser.add_argument('--hello')
-args = parser.parse_args()
+# Continuous data generation for TouchDesigner
+def generate_numerical_data():
+    """Generate numerical data for TouchDesigner visualization"""
+    while True:
+        # Generate various types of numerical data
+        data = {
+            "timestamp": time.time(),
+            "random_values": np.random.rand(10).tolist(),  # 10 random values 0-1
+            "sine_wave": [float(np.sin(i * 0.1 + time.time())) for i in range(20)],
+            "single_value": float(np.random.uniform(0, 100)),
+            "quantum_simulation": {
+                "amplitude": float(np.random.rand()),
+                "phase": float(np.random.uniform(0, 2 * np.pi)),
+                "frequency": float(np.random.uniform(1, 10))
+            }
+        }
+        
+        # Output as JSON (Node.js will parse this)
+        print(json.dumps(data), flush=True)
+        
+        # Wait before sending next batch (adjust for your needs)
+        time.sleep(0.1)  # 10 times per second
 
-print(args.hello, flush=True)
-time.sleep(1) # To ensure that the output isn't buffered.
-print('I am talking from Python', flush=True)
-time.sleep(1)
-print('I really like Quantum Computing', flush=True)
-time.sleep(1)
-print('Integrating tech stack I know with Quantum Computing is more fun', flush=True)
-
+if __name__ == "__main__":
+    try:
+        print(json.dumps({"status": "Python script started"}), flush=True, file=sys.stderr)
+        generate_numerical_data()
+    except KeyboardInterrupt:
+        print(json.dumps({"status": "Python script stopped"}), flush=True, file=sys.stderr)
+        sys.exit(0)
