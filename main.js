@@ -33,8 +33,8 @@ function startPythonStream() {
 
   console.log('Starting Python script...');
   const args = ['experiment.py'];
-  // Use python3 for Heroku
-  pythonProcess = spawn('python3', args);
+  
+  pythonProcess = spawn('python', args);
   
   // Handle spawn errors
   pythonProcess.on('error', (err) => {

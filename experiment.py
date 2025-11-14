@@ -33,17 +33,33 @@ def main():
             
             if len(input_values) == 3:
                 
-                # rotate the knobs
+                # This part is working
                 rotate(input_values)
                 
-                # Call the four.py script to generate the 4 values
-                result = subprocess.run(['python3', 'four.py'], capture_output=True, text=True)
+                # --- START DEBUGGING BLOCK ---
+                print("Python: Calling four.py subprocess...", file=sys.stderr, flush=True)
                 
-                # This print() sends the JSON string to Node.js's stdout
-                print(result.stdout, end='', flush=True)
+                result = subprocess.run(['python', 'four.py'], capture_output=True, text=True)
+                
+                # Check if the subprocess (four.py) had an error
+                if result.stderr:
+                    print(f"Python (four.py) Error: {result.stderr}", file=sys.stderr, flush=True)
+                
+                # Check if the subprocess (four.py) ran but printed nothing
+                elif not result.stdout:
+                    print("Python (four.py) Warning: Subprocess ran but produced no output (stdout).", file=sys.stderr, flush=True)
+                    
+                else:
+                    # SUCCESS: Send the data back to Node.js
+                    print("Python: Subprocess success. Sending data back to Node.", file=sys.stderr, flush=True)
+                    print(result.stdout, end='', flush=True)
+                # --- END DEBUGGING BLOCK ---
                 
     except Exception as e:
         print(f"Python Error: {e}", file=sys.stderr, flush=True)
+
+if __name__ == "__main__":
+    main()
 
 if __name__ == "__main__":
     main()
