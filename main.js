@@ -31,10 +31,8 @@ function startPythonStream() {
     return;
   }
 
-  /*
   console.log('Starting Python script...');
-  const args = ['four.py'];
-  // const rotatedKnobs = ['experiment.py'];
+  const args = ['experiment.py'];
   // CHANGED to 'python' for Heroku
   pythonProcess = spawn('python', args);
 
@@ -52,7 +50,6 @@ function startPythonStream() {
     }
   });
   // --- End of readline fix ---
-  */
 
   pythonProcess.stderr.on('data', (data) => {
     // FIXED: Convert buffer to string
@@ -95,7 +92,7 @@ io.on('connection', (socket) => {
 
   // Sending data from a MIDI knob controller values to the server
   socket.on('knobs', (data) => {
-    // 'data' is the { "knob_values": [...] } object from TD
+    // 'data' is passed as-is to experiment.py (ensure TouchDesigner sends { "knobs": [...] })
     
     if (pythonProcess && pythonProcess.stdin) {
       try {

@@ -40,7 +40,7 @@ def main():
                 result = subprocess.run(['python', 'four.py'], capture_output=True, text=True)
                 
                 # This print() sends the JSON string to Node.js's stdout
-                print(json.dumps(result.stdout), flush=True)
+                print(result.stdout, flush=True)
                 
     except Exception as e:
         print(f"Python Error: {e}", file=sys.stderr, flush=True)
