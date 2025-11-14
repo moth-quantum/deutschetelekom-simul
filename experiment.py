@@ -29,7 +29,7 @@ def main():
                 continue
             
             user_input = json.loads(line)
-            input_values = user_input.get('knobs', [])
+            input_values = user_input.get('knob_values', [])
             
             if len(input_values) == 3:
                 
@@ -40,7 +40,7 @@ def main():
                 result = subprocess.run(['python', 'four.py'], capture_output=True, text=True)
                 
                 # This print() sends the JSON string to Node.js's stdout
-                print(result.stdout, flush=True)
+                print(result.stdout, end='', flush=True)
                 
     except Exception as e:
         print(f"Python Error: {e}", file=sys.stderr, flush=True)
