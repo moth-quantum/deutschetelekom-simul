@@ -33,8 +33,14 @@ function startPythonStream() {
 
   console.log('Starting Python script...');
   const args = ['experiment.py'];
-  // CHANGED to 'python' for Heroku
-  pythonProcess = spawn('python', args);
+  // Use python3 for Heroku
+  pythonProcess = spawn('python3', args);
+  
+  // Handle spawn errors
+  pythonProcess.on('error', (err) => {
+    console.error('Failed to start Python process:', err);
+    pythonProcess = null;
+  });
 
   // --- FIXED: Use readline to handle stream buffering ---
   const rl = readline.createInterface({ input: pythonProcess.stdout });

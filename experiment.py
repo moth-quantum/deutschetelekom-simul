@@ -37,7 +37,7 @@ def main():
                 rotate(input_values)
                 
                 # Call the four.py script to generate the 4 values
-                result = subprocess.run(['python', 'four.py'], capture_output=True, text=True)
+                result = subprocess.run(['python3', 'four.py'], capture_output=True, text=True)
                 
                 # This print() sends the JSON string to Node.js's stdout
                 print(result.stdout, end='', flush=True)
