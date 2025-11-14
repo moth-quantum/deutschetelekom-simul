@@ -31,8 +31,10 @@ function startPythonStream() {
     return;
   }
 
+  /*
   console.log('Starting Python script...');
   const args = ['four.py'];
+  // const rotatedKnobs = ['experiment.py'];
   // CHANGED to 'python' for Heroku
   pythonProcess = spawn('python', args);
 
@@ -50,6 +52,7 @@ function startPythonStream() {
     }
   });
   // --- End of readline fix ---
+  */
 
   pythonProcess.stderr.on('data', (data) => {
     // FIXED: Convert buffer to string
@@ -87,6 +90,28 @@ io.on('connection', (socket) => {
       console.log('Last client disconnected, stopping Python process.');
       pythonProcess.kill();
       pythonProcess = null;
+    }
+  });
+
+  // Sending data from a MIDI knob controller values to the server
+  socket.on('knobs', (data) => {
+    // 'data' is the { "knob_values": [...] } object from TD
+    
+    if (pythonProcess && pythonProcess.stdin) {
+      try {
+        // Convert the JSON object back to a string
+        const dataString = JSON.stringify(data);
+        
+        // Write it to the Python script's standard input
+        // The '\n' is CRITICAL - it tells Python it's a new line
+        pythonProcess.stdin.write(dataString + '\n');
+        
+        // Optional: log it
+        console.log('Sent to Python:', dataString);
+        
+      } catch (e) {
+        console.error('Failed to send data to Python:', e);
+      }
     }
   });
 
