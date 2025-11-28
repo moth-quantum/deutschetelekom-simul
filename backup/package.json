@@ -1,0 +1,21 @@
+{
+  "name": "deutschetelekom-simul",
+  "version": "1.0.0",
+  "description": "Simulation Node.js app to support live audiovisual production",
+  "main": "main.js",
+  "scripts": {
+    "start": "node main.js",
+    "dev": "node main.js"
+  },
+  "engines": {
+    "node": "18.x",
+    "npm": "9.x"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.6.1"
+  },
+  "keywords": ["socket.io", "touchdesigner", "python", "quantum"],
+  "author": "",
+  "license": "ISC"
+}

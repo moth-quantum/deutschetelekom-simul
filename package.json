@@ -1,21 +1,14 @@
 {
-  "name": "deutschetelekom-simul",
+  "name": "tlab-prototype",
   "version": "1.0.0",
-  "description": "Simulation Node.js app to support live audiovisual production",
-  "main": "main.js",
+  "description": "Socket.IO server for TouchDesigner",
+  "main": "server.js",
   "scripts": {
-    "start": "node main.js",
-    "dev": "node main.js"
-  },
-  "engines": {
-    "node": "18.x",
-    "npm": "9.x"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.18.2",
-    "socket.io": "^4.6.1"
-  },
-  "keywords": ["socket.io", "touchdesigner", "python", "quantum"],
-  "author": "",
-  "license": "ISC"
+    "socket.io": "^4.6.1",
+    "socket.io-client": "^4.8.1"
+  }
 }
