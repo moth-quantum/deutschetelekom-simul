@@ -36,30 +36,34 @@ def main():
                 # This part is working
                 rotate(input_values)
                 
-                # --- START DEBUGGING BLOCK ---
-                print("Python: Calling four.py subprocess...", file=sys.stderr, flush=True)
+                # --- START DEVICE CONTROLLER BLOCK ---
+                print("Python: Calling device_controller.py subprocess...", file=sys.stderr, flush=True)
                 
-                result = subprocess.run(['python', 'four.py'], capture_output=True, text=True)
+                # Prepare input data for device_controller.py
+                device_input = json.dumps({'knob_values': input_values})
                 
-                # Check if the subprocess (four.py) had an error
+                # Call device_controller.py (has toggle for simulation/real hardware)
+                result = subprocess.run(['python', 'device_controller.py'], 
+                                       input=device_input, 
+                                       capture_output=True, 
+                                       text=True)
+                
+                # Check if the subprocess had an error
                 if result.stderr:
-                    print(f"Python (four.py) Error: {result.stderr}", file=sys.stderr, flush=True)
+                    print(f"Python (device_controller.py) Log: {result.stderr}", file=sys.stderr, flush=True)
                 
-                # Check if the subprocess (four.py) ran but printed nothing
-                elif not result.stdout:
-                    print("Python (four.py) Warning: Subprocess ran but produced no output (stdout).", file=sys.stderr, flush=True)
+                # Check if the subprocess ran but printed nothing
+                if not result.stdout:
+                    print("Python (device_controller.py) Warning: Subprocess ran but produced no output (stdout).", file=sys.stderr, flush=True)
                     
                 else:
                     # SUCCESS: Send the data back to Node.js
                     print("Python: Subprocess success. Sending data back to Node.", file=sys.stderr, flush=True)
                     print(result.stdout, end='', flush=True)
-                # --- END DEBUGGING BLOCK ---
+                # --- END DEVICE CONTROLLER BLOCK ---
                 
     except Exception as e:
         print(f"Python Error: {e}", file=sys.stderr, flush=True)
-
-if __name__ == "__main__":
-    main()
 
 if __name__ == "__main__":
     main()

@@ -2,7 +2,9 @@ const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const { spawn } = require('child_process');
-const readline = require('readline'); // <-- ADDED
+const readline = require('readline');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const httpServer = createServer(app);
@@ -14,10 +16,57 @@ const io = new Server(httpServer, {
 });
 
 const PORT = process.env.PORT || 3000;
+const CONFIG_FILE = path.join(__dirname, 'config.json');
 
-// Basic health check endpoint
-app.get('/', (req, res) => {
-  res.send('Socket.IO server running for TouchDesigner');
+// Serve static files from 'public' directory
+app.use(express.static('public'));
+app.use(express.json());
+
+// Helper: Read config file
+function readConfig() {
+  try {
+    const data = fs.readFileSync(CONFIG_FILE, 'utf8');
+    return JSON.parse(data);
+  } catch (error) {
+    console.error('Error reading config:', error);
+    return { useRealHardware: false }; // Default
+  }
+}
+
+// Helper: Write config file
+function writeConfig(config) {
+  try {
+    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
+    return true;
+  } catch (error) {
+    console.error('Error writing config:', error);
+    return false;
+  }
+}
+
+// API: Get current mode
+app.get('/api/mode', (req, res) => {
+  const config = readConfig();
+  res.json(config);
+});
+
+// API: Set mode
+app.post('/api/mode', (req, res) => {
+  const { useRealHardware } = req.body;
+  
+  if (typeof useRealHardware !== 'boolean') {
+    return res.status(400).json({ success: false, error: 'useRealHardware must be a boolean' });
+  }
+  
+  const config = { useRealHardware };
+  const success = writeConfig(config);
+  
+  if (success) {
+    console.log(`Mode changed to: ${useRealHardware ? 'HARDWARE' : 'SIMULATION'}`);
+    res.json({ success: true, useRealHardware });
+  } else {
+    res.status(500).json({ success: false, error: 'Failed to write config' });
+  }
 });
 
 // Store active Python process

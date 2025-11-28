@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Controller - Deutsche Telekom Simulation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .status-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .status-row:last-child {
+            margin-bottom: 0;
+        }
+        
+        .status-label {
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .status-value {
+            font-weight: 600;
+            font-size: 16px;
+        }
+        
+        .mode-simulation {
+            color: #28a745;
+        }
+        
+        .mode-hardware {
+            color: #dc3545;
+        }
+        
+        .toggle-section {
+            background: #fff;
+            border: 2px solid #e9ecef;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        
+        .toggle-section h2 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 15px;
+        }
+        
+        .toggle-container {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .toggle-btn {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .toggle-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .toggle-btn.active {
+            border-color: #667eea;
+            background: #667eea;
+            color: white;
+        }
+        
+        .toggle-btn.simulation.active {
+            background: #28a745;
+            border-color: #28a745;
+        }
+        
+        .toggle-btn.hardware.active {
+            background: #dc3545;
+            border-color: #dc3545;
+        }
+        
+        .info-text {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+        
+        .server-info {
+            background: #e7f3ff;
+            border-left: 4px solid #2196F3;
+            padding: 15px;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #333;
+        }
+        
+        .server-info strong {
+            color: #2196F3;
+        }
+        
+        .loading {
+            text-align: center;
+            color: #666;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 15px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-success {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎛️ Device Controller</h1>
+        <p class="subtitle">Deutsche Telekom Quantum Simulation</p>
+        
+        <div class="status-card">
+            <div class="status-row">
+                <span class="status-label">Current Mode:</span>
+                <span class="status-value" id="currentMode">
+                    <div class="spinner"></div>
+                </span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">Server Status:</span>
+                <span class="badge badge-success">Online</span>
+            </div>
+        </div>
+        
+        <div class="toggle-section">
+            <h2>⚙️ Mode Selection</h2>
+            
+            <div class="toggle-container">
+                <button class="toggle-btn simulation" onclick="setMode(false)">
+                    🔄 Simulation Mode
+                </button>
+                <button class="toggle-btn hardware" onclick="setMode(true)">
+                    🔌 Hardware Mode
+                </button>
+            </div>
+            
+            <p class="info-text" id="modeDescription">
+                Loading...
+            </p>
+        </div>
+        
+        <div class="server-info">
+            <strong>📡 Socket.IO Server:</strong> Ready for TouchDesigner connections
+        </div>
+    </div>
+    
+    <script>
+        const descriptions = {
+            simulation: "Using random data generation. No hardware required. Safe for testing.",
+            hardware: "Using real ThorLabs polarizers and TimeTagger. Requires Windows + hardware connected."
+        };
+        
+        // Load current mode on page load
+        async function loadMode() {
+            try {
+                const response = await fetch('/api/mode');
+                const data = await response.json();
+                updateUI(data.useRealHardware);
+            } catch (error) {
+                console.error('Error loading mode:', error);
+                document.getElementById('currentMode').innerHTML = '<span style="color: #dc3545;">Error</span>';
+            }
+        }
+        
+        // Set mode via API
+        async function setMode(useHardware) {
+            try {
+                const response = await fetch('/api/mode', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ useRealHardware: useHardware })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    updateUI(useHardware);
+                } else {
+                    alert('Failed to update mode: ' + (data.error || 'Unknown error'));
+                }
+            } catch (error) {
+                console.error('Error setting mode:', error);
+                alert('Failed to update mode. Check console for details.');
+            }
+        }
+        
+        // Update UI based on current mode
+        function updateUI(useHardware) {
+            const simulationBtn = document.querySelector('.toggle-btn.simulation');
+            const hardwareBtn = document.querySelector('.toggle-btn.hardware');
+            const currentModeEl = document.getElementById('currentMode');
+            const descriptionEl = document.getElementById('modeDescription');
+            
+            // Update buttons
+            if (useHardware) {
+                simulationBtn.classList.remove('active');
+                hardwareBtn.classList.add('active');
+                currentModeEl.innerHTML = '<span class="mode-hardware">Hardware Mode</span>';
+                descriptionEl.textContent = descriptions.hardware;
+            } else {
+                hardwareBtn.classList.remove('active');
+                simulationBtn.classList.add('active');
+                currentModeEl.innerHTML = '<span class="mode-simulation">Simulation Mode</span>';
+                descriptionEl.textContent = descriptions.simulation;
+            }
+        }
+        
+        // Load mode on page load
+        loadMode();
+    </script>
+</body>
+</html>
