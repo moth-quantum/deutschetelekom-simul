@@ -139,27 +139,25 @@ def control_real_hardware(input_values):
         device_tel.SetPolParams(vel_params)
         
         # ===== STEP 2: Move polarizers based on input values =====
-        # Assuming input_values = [angle1, angle2, ...] for the two paddles
-        # You can modify this logic based on how TouchDesigner sends the values
+        # The values between 0 and 160 will arrive, mapped from the midi values (0-127) from TD.
         
-        # Map 3 input values to 2 paddle angles (example mapping)
-        # You might use input_values[0] and input_values[1] for paddle angles
-        # and input_values[2] for something else (velocity, runtime, etc.)
+        # input_values = [number_1, number_2, number_3](expectation)
         
-        angle1 = min(max(input_values[0], 0), 170)  # Clamp to 0-170 degrees
-        angle2 = min(max(input_values[1], 0), 170)
+        angle1 = input_values[0]
+        angle2 = input_values[1]
+        angle3 = input_values[2]
         
-        paddles = [PolarizerPaddles.Paddle1, PolarizerPaddles.Paddle2]
-        positions = [Decimal(angle1), Decimal(angle2)]
+        paddles = [PolarizerPaddles.Paddle1, PolarizerPaddles.Paddle2, PolarizerPaddles.Paddle3]
+        positions = [Decimal(angle1), Decimal(angle2), Decimal(angle3)]
         
         # Move paddles
-        for i in range(2):
+        for i in range(3):
             device_tel.MoveTo(positions[i], paddles[i], DEFAULT_TIMEOUT_MS)
         
-        print(f"Moved paddles to: [{angle1}, {angle2}]", file=sys.stderr, flush=True)
+        print(f"Moved paddles to: [{angle1}, {angle2}, {angle3}]", file=sys.stderr, flush=True)
         
         # ===== STEP 3: Read coincidence data from TimeTagger =====
-        runtime = 1  # seconds - could be influenced by input_values[2] if needed
+        runtime = 1 # sec
         channel_pairs = [(5, 7), (6, 8), (5, 8), (6, 7)]
         
         results = get_coincidences(channel_pairs, runtime=runtime)
@@ -169,14 +167,14 @@ def control_real_hardware(input_values):
         
         # ===== STEP 4: Cleanup =====
         # Return paddles to home position
-        for i in range(2):
+        for i in range(3):
             device_tel.MoveTo(Decimal(0), paddles[i], DEFAULT_TIMEOUT_MS)
         
         device_tel.StopPolling()
-        device_tel.Disconnect()
+        device_tel.Disconnect() # Always disconnect after usage to block any mischief
         
         # Convert numpy int32 to regular Python int for JSON serialization
-        peaks = [int(p) for p in peaks]
+        peaks = [int(p) for p in peaks] # Four values to be sent to server
         
         return peaks
         
