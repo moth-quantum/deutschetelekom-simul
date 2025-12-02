@@ -42,69 +42,7 @@ if USE_REAL_HARDWARE:
     # TimeTagger
     import TimeTagger
 else:
-    # Simulation mode - just use random
-    import random
-
-
-def simulate_device_interaction(input_values):
-    """
-    Simulation mode: Uses improved quantum entanglement simulation
-    Takes 3 input values (angles), returns 4 output values
-    """
-    import math
-    
-    # Use the input angles to generate quantum-inspired entanglement simulation
-    angles = input_values[:3] if len(input_values) >= 3 else [0, 0, 0]
-    
-    # Convert to radians for calculations
-    theta1 = math.radians(angles[0])
-    theta2 = math.radians(angles[1])
-    theta3 = math.radians(angles[2])
-    
-    # Calculate angle differences (important for entanglement correlation)
-    delta_12 = abs(theta1 - theta2)
-    
-    # Determine if this should show entangled state
-    # Based on angle configurations and random chance
-    # Entangled state appears when angles are in certain relationships
-    entangled_probability = math.cos(delta_12) ** 2
-    is_entangled = random.random() < entangled_probability
-    
-    if is_entangled:
-        # ENTANGLED STATE: Two values close to 1.0, two close to 0.0
-        # This simulates Bell state correlations
-        
-        # Values close to 1.0 (with small noise)
-        val1 = random.uniform(0.85, 0.99)
-        val2 = random.uniform(0.85, 0.99)
-        
-        # Values close to 0.0 (with small noise)
-        val3 = random.uniform(0.01, 0.15)
-        val4 = random.uniform(0.01, 0.15)
-        
-        # Randomly swap which pair is high/low for variation
-        if random.random() < 0.5:
-            val1, val3 = val3, val1
-            val2, val4 = val4, val2
-            
-    else:
-        # NON-ENTANGLED STATE: More distributed values
-        # Simulate classical correlation or mixed state
-        
-        # Use quantum-inspired formulas
-        val1 = 0.5 + 0.3 * math.cos(2 * theta1) + random.uniform(-0.1, 0.1)
-        val2 = 0.5 + 0.3 * math.cos(2 * theta2) + random.uniform(-0.1, 0.1)
-        val3 = 0.5 + 0.3 * math.sin(theta1 + theta2) + random.uniform(-0.1, 0.1)
-        val4 = 0.5 + 0.3 * math.sin(theta1 - theta3) + random.uniform(-0.1, 0.1)
-        
-        # Clamp to [0, 1] range
-        val1 = max(0.0, min(1.0, val1))
-        val2 = max(0.0, min(1.0, val2))
-        val3 = max(0.0, min(1.0, val3))
-        val4 = max(0.0, min(1.0, val4))
-    
-    return [val1, val2, val3, val4]
-
+    print("Hardware is not connected. Debug on RDP.")
 
 def control_real_hardware(input_values):
     """
