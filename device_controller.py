@@ -11,22 +11,37 @@ import os
 
 # ============================================
 # MODE CONFIGURATION
-# Now controlled via web interface at your Heroku URL
-# Or manually edit config.json: { "useRealHardware": true/false }
+# Reads from Node.js in-memory state via HTTP, with config.json fallback
+# Toggle mode via web interface - changes take effect immediately
 # ============================================
 
-def read_mode_from_config():
-    """Read mode from config.json file"""
+def read_mode_from_server():
+    """Read mode from Node.js in-memory state, fallback to config.json"""
+    try:
+        # Try to get mode from Node.js server
+        import requests
+        response = requests.get('http://localhost:3000/api/mode', timeout=1)
+        if response.status_code == 200:
+            mode_data = response.json()
+            use_hardware = mode_data.get('useRealHardware', False)
+            print(f"Using mode from server: useRealHardware={use_hardware}", file=sys.stderr, flush=True)
+            return use_hardware
+    except:
+        pass
+    
+    # Fallback to config file
     config_path = os.path.join(os.path.dirname(__file__), 'config.json')
     try:
         with open(config_path, 'r') as f:
             config = json.load(f)
-            return config.get('useRealHardware', False)
+            use_hardware = config.get('useRealHardware', False)
+            print(f"Using mode from file: useRealHardware={use_hardware}", file=sys.stderr, flush=True)
+            return use_hardware
     except Exception as e:
-        print(f"Warning: Could not read config.json, defaulting to SIMULATION mode. Error: {e}", file=sys.stderr, flush=True)
+        print(f"Warning: No mode config found, defaulting to SIMULATION mode.", file=sys.stderr, flush=True)
         return False
 
-USE_REAL_HARDWARE = read_mode_from_config()
+USE_REAL_HARDWARE = read_mode_from_server()
 
 if USE_REAL_HARDWARE:
     # Real hardware imports (only load on Windows with hardware)

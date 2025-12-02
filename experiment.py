@@ -43,14 +43,22 @@ def main():
                 # Check if we should use bridge (remote Windows machine)
                 bridge_url = os.environ.get('BRIDGE_URL', '').strip()
                 
-                # Check current mode
+                # Check current mode from Node.js in-memory state
                 use_hardware = False
                 try:
-                    with open('config.json', 'r') as f:
-                        config = json.load(f)
-                        use_hardware = config.get('useRealHardware', False)
+                    # Query the in-memory mode from Node.js
+                    response = requests.get('http://localhost:3000/api/mode', timeout=1)
+                    if response.status_code == 200:
+                        mode_data = response.json()
+                        use_hardware = mode_data.get('useRealHardware', False)
                 except:
-                    pass
+                    # Fallback to config file if Node.js isn't responding
+                    try:
+                        with open('config.json', 'r') as f:
+                            config = json.load(f)
+                            use_hardware = config.get('useRealHardware', False)
+                    except:
+                        pass
                 
                 # HYBRID MODE: Forward to bridge if URL is set and hardware mode is ON
                 if bridge_url and use_hardware:

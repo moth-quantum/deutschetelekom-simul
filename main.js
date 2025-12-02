@@ -16,41 +16,22 @@ const io = new Server(httpServer, {
 });
 
 const PORT = process.env.PORT || 3000;
-const CONFIG_FILE = path.join(__dirname, 'config.json');
 
 // Serve static files from 'public' directory
 app.use(express.static('public'));
 app.use(express.json());
 
-// Helper: Read config file
-function readConfig() {
-  try {
-    const data = fs.readFileSync(CONFIG_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading config:', error);
-    return { useRealHardware: false }; // Default
-  }
-}
-
-// Helper: Write config file
-function writeConfig(config) {
-  try {
-    fs.writeFileSync(CONFIG_FILE, JSON.stringify(config, null, 2), 'utf8');
-    return true;
-  } catch (error) {
-    console.error('Error writing config:', error);
-    return false;
-  }
-}
+// ========================================
+// SIMPLE IN-MEMORY MODE STATE
+// ========================================
+let currentMode = { useRealHardware: false }; // Default: SIMULATION
 
 // API: Get current mode
 app.get('/api/mode', (req, res) => {
-  const config = readConfig();
-  res.json(config);
+  res.json(currentMode);
 });
 
-// API: Set mode
+// API: Set mode (broadcasts to all clients via Socket.IO)
 app.post('/api/mode', (req, res) => {
   const { useRealHardware } = req.body;
   
@@ -58,15 +39,13 @@ app.post('/api/mode', (req, res) => {
     return res.status(400).json({ success: false, error: 'useRealHardware must be a boolean' });
   }
   
-  const config = { useRealHardware };
-  const success = writeConfig(config);
+  currentMode = { useRealHardware };
+  console.log(`Mode changed to: ${useRealHardware ? 'HARDWARE' : 'SIMULATION'}`);
   
-  if (success) {
-    console.log(`Mode changed to: ${useRealHardware ? 'HARDWARE' : 'SIMULATION'}`);
-    res.json({ success: true, useRealHardware });
-  } else {
-    res.status(500).json({ success: false, error: 'Failed to write config' });
-  }
+  // Broadcast mode change to all connected clients
+  io.emit('mode_changed', currentMode);
+  
+  res.json({ success: true, useRealHardware });
 });
 
 // Store active Python process

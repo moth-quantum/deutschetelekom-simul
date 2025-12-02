@@ -233,11 +233,21 @@
         </div>
     </div>
     
+    <script src="/socket.io/socket.io.js"></script>
     <script>
         const descriptions = {
             simulation: "Using random data generation. No hardware required. Safe for testing.",
             hardware: "Using real ThorLabs polarizers and TimeTagger. Requires Windows + hardware connected."
         };
+        
+        // Connect to Socket.IO for real-time updates
+        const socket = io();
+        
+        // Listen for mode changes from server
+        socket.on('mode_changed', (data) => {
+            console.log('Mode changed:', data);
+            updateUI(data.useRealHardware);
+        });
         
         // Load current mode on page load
         async function loadMode() {
