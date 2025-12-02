@@ -11,37 +11,18 @@ import os
 
 # ============================================
 # MODE CONFIGURATION
-# Reads from Node.js in-memory state via HTTP, with config.json fallback
-# Toggle mode via web interface - changes take effect immediately
+# Mode is passed via USE_REAL_HARDWARE environment variable from Node.js
+# Toggle mode via web interface - Python process restarts with new mode
 # ============================================
 
-def read_mode_from_server():
-    """Read mode from Node.js in-memory state, fallback to config.json"""
-    try:
-        # Try to get mode from Node.js server
-        import requests
-        response = requests.get('http://localhost:3000/api/mode', timeout=1)
-        if response.status_code == 200:
-            mode_data = response.json()
-            use_hardware = mode_data.get('useRealHardware', False)
-            print(f"Using mode from server: useRealHardware={use_hardware}", file=sys.stderr, flush=True)
-            return use_hardware
-    except:
-        pass
-    
-    # Fallback to config file
-    config_path = os.path.join(os.path.dirname(__file__), 'config.json')
-    try:
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-            use_hardware = config.get('useRealHardware', False)
-            print(f"Using mode from file: useRealHardware={use_hardware}", file=sys.stderr, flush=True)
-            return use_hardware
-    except Exception as e:
-        print(f"Warning: No mode config found, defaulting to SIMULATION mode.", file=sys.stderr, flush=True)
-        return False
+def read_mode_from_env():
+    """Read mode from environment variable set by Node.js"""
+    use_hardware = os.environ.get('USE_REAL_HARDWARE', 'false').lower() == 'true'
+    mode_name = 'HARDWARE' if use_hardware else 'SIMULATION'
+    print(f"Device controller mode: {mode_name}", file=sys.stderr, flush=True)
+    return use_hardware
 
-USE_REAL_HARDWARE = read_mode_from_server()
+USE_REAL_HARDWARE = read_mode_from_env()
 
 if USE_REAL_HARDWARE:
     # Real hardware imports (only load on Windows with hardware)

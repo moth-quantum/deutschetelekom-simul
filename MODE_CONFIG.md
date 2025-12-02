@@ -58,17 +58,27 @@ let currentMode = { useRealHardware: false }; // Change this line
 
 ```
 Web UI (index.html)
-    ↓ Socket.IO connection
-    ↓ Listens: 'mode_changed'
+    ↓ Click button → POST /api/mode
+    ↓ Listens: 'mode_changed' event
     ↓
 Node.js (main.js)
-    ↓ In-memory: currentMode = {...}
+    ↓ Updates: currentMode = {...}
+    ↓ Kills Python process
+    ↓ Restarts with new USE_REAL_HARDWARE env var
     ↓ Broadcasts: io.emit('mode_changed', mode)
-    ↓ HTTP API: GET /api/mode
     ↓
 Python (experiment.py / device_controller.py)
-    ↓ Queries: GET http://localhost:3000/api/mode
-    ↓ Uses mode to route hardware vs simulation
+    ↓ Reads: os.environ.get('USE_REAL_HARDWARE')
+    ↓ Routes: hardware vs simulation
 ```
 
-Simple and effective! 🎯
+## How Mode Changes Work
+
+1. **Click button** on web UI
+2. **Node.js updates** `currentMode` in memory
+3. **Node.js kills** current Python process
+4. **Node.js restarts** Python with new `USE_REAL_HARDWARE` env var
+5. **Socket.IO broadcasts** to update all web clients
+6. **Python reads** mode from environment variable
+
+The Python process restart ensures the new mode takes effect immediately! 🎯

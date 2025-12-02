@@ -42,6 +42,14 @@ app.post('/api/mode', (req, res) => {
   currentMode = { useRealHardware };
   console.log(`Mode changed to: ${useRealHardware ? 'HARDWARE' : 'SIMULATION'}`);
   
+  // Restart Python process with new mode
+  if (pythonProcess && io.engine.clientsCount > 0) {
+    console.log('Restarting Python process with new mode...');
+    pythonProcess.kill();
+    pythonProcess = null;
+    // Will auto-restart with new env var when next data comes in
+  }
+  
   // Broadcast mode change to all connected clients
   io.emit('mode_changed', currentMode);
   
@@ -62,7 +70,13 @@ function startPythonStream() {
   console.log('Starting Python script...');
   const args = ['experiment.py'];
   
-  pythonProcess = spawn('python', args);
+  // Pass current mode to Python via environment variable
+  const pythonEnv = {
+    ...process.env,
+    USE_REAL_HARDWARE: currentMode.useRealHardware.toString()
+  };
+  
+  pythonProcess = spawn('python', args, { env: pythonEnv });
   
   // Handle spawn errors
   pythonProcess.on('error', (err) => {
