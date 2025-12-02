@@ -120,7 +120,7 @@ def control_real_hardware(input_values):
     """
     
     # Device configuration
-    DEVICE_ID = "38308514"  # Your ThorLabs device ID
+    DEVICE_ID = "38469684"  # Your ThorLabs device ID
     DEFAULT_TIMEOUT_MS = 30000
     VELOCITY = 50  # percentage
     
