@@ -51,19 +51,27 @@ def execute_hardware():
         # Prepare input for device_controller.py
         device_input = json.dumps({'knob_values': knob_values})
         
-        # Execute device_controller.py
+        # Execute device_controller.py with hardware mode enabled
+        env = os.environ.copy()
+        env['USE_REAL_HARDWARE'] = 'true'  # Bridge always uses real hardware
+        
         result = subprocess.run(
             ['python', DEVICE_CONTROLLER_PATH],
             input=device_input,
             capture_output=True,
             text=True,
-            timeout=120  # 2 minute timeout for hardware operations
+            timeout=120,  # 2 minute timeout for hardware operations
+            env=env
         )
+        
+        # Log stderr for debugging (even on success)
+        if result.stderr:
+            print(f"[BRIDGE] Device stderr: {result.stderr}", flush=True)
         
         # Check for errors
         if result.returncode != 0:
             error_msg = result.stderr or 'Unknown error'
-            print(f"[BRIDGE] Device controller error: {error_msg}", flush=True)
+            print(f"[BRIDGE] Device controller error (exit {result.returncode}): {error_msg}", flush=True)
             return jsonify({
                 'success': False,
                 'error': error_msg
