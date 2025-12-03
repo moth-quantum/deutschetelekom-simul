@@ -31,6 +31,45 @@ app.get('/api/mode', (req, res) => {
   res.json(currentMode);
 });
 
+// API: Check hardware bridge status (proxy to Windows machine)
+app.get('/api/hardware-status', async (req, res) => {
+  const bridgeUrl = process.env.BRIDGE_URL;
+  
+  if (!bridgeUrl) {
+    return res.json({
+      bridge_online: false,
+      hardware_connected: false,
+      error: 'BRIDGE_URL not configured on Heroku'
+    });
+  }
+  
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    
+    const response = await fetch(`${bridgeUrl}/api/status`, {
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+    
+    if (!response.ok) {
+      throw new Error(`Bridge returned ${response.status}`);
+    }
+    
+    const data = await response.json();
+    res.json(data);
+    
+  } catch (error) {
+    res.json({
+      bridge_online: false,
+      hardware_connected: false,
+      error: error.name === 'AbortError' 
+        ? 'Bridge timeout - is ngrok running?' 
+        : `Bridge unreachable: ${error.message}`
+    });
+  }
+});
+
 // API: Set mode (broadcasts to all clients via Socket.IO)
 app.post('/api/mode', (req, res) => {
   const { useRealHardware } = req.body;

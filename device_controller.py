@@ -41,6 +41,8 @@ if USE_REAL_HARDWARE:
     
     # TimeTagger
     import TimeTagger
+
+    print("Hardware is connected.")
 else:
     print("Hardware is not connected. Debug on RDP.")
 

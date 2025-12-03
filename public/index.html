@@ -206,10 +206,17 @@
                 </span>
             </div>
             <div class="status-row">
-                <span class="status-label">Server Status:</span>
-                <span class="badge badge-success">Online</span>
+                <span class="status-label">Bridge (ngrok):</span>
+                <span id="bridgeStatus"><span class="badge" style="background:#ffc107;color:#333">Checking...</span></span>
             </div>
+            <div class="status-row">
+                <span class="status-label">ThorLabs Hardware:</span>
+                <span id="hardwareStatus"><span class="badge" style="background:#ffc107;color:#333">Checking...</span></span>
+            </div>
+            <div id="hardwareError" style="margin-top:10px;font-size:12px;color:#dc3545;display:none;"></div>
         </div>
+        
+        <button onclick="checkHardware()" style="margin-bottom:20px;padding:10px 20px;border:none;border-radius:8px;background:#667eea;color:white;cursor:pointer;font-weight:600;">🔄 Refresh Hardware Status</button>
         
         <div class="toggle-section">
             <h2>⚙️ Mode Selection</h2>
@@ -306,8 +313,51 @@
             }
         }
         
+        // Check hardware status via bridge
+        async function checkHardware() {
+            const bridgeEl = document.getElementById('bridgeStatus');
+            const hardwareEl = document.getElementById('hardwareStatus');
+            const errorEl = document.getElementById('hardwareError');
+            
+            bridgeEl.innerHTML = '<span class="badge" style="background:#ffc107;color:#333">Checking...</span>';
+            hardwareEl.innerHTML = '<span class="badge" style="background:#ffc107;color:#333">Checking...</span>';
+            errorEl.style.display = 'none';
+            
+            try {
+                const response = await fetch('/api/hardware-status');
+                const data = await response.json();
+                
+                // Bridge status
+                if (data.bridge_online) {
+                    bridgeEl.innerHTML = '<span class="badge badge-success">Online</span>';
+                } else {
+                    bridgeEl.innerHTML = '<span class="badge badge-danger">Offline</span>';
+                }
+                
+                // Hardware status
+                if (data.hardware_connected) {
+                    hardwareEl.innerHTML = `<span class="badge badge-success">Connected (${data.device_id})</span>`;
+                } else {
+                    hardwareEl.innerHTML = '<span class="badge badge-danger">Not Connected</span>';
+                }
+                
+                // Show error if any
+                if (data.error) {
+                    errorEl.textContent = data.error;
+                    errorEl.style.display = 'block';
+                }
+                
+            } catch (error) {
+                bridgeEl.innerHTML = '<span class="badge badge-danger">Error</span>';
+                hardwareEl.innerHTML = '<span class="badge badge-danger">Unknown</span>';
+                errorEl.textContent = error.message;
+                errorEl.style.display = 'block';
+            }
+        }
+        
         // Load mode on page load
         loadMode();
+        checkHardware();  // Also check hardware on load
     </script>
 </body>
 </html>

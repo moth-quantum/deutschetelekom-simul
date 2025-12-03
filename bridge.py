@@ -106,28 +106,41 @@ def execute_hardware():
 
 @app.route('/api/status', methods=['GET'])
 def status():
-    """Check if hardware is ready"""
+    """Check if hardware is ready - actually tests ThorLabs connection"""
+    result = {
+        'bridge_online': True,
+        'location': '172.20.118.125',
+        'hardware_connected': False,
+        'device_id': None,
+        'error': None
+    }
+    
     try:
-        # Check if config.json exists
-        config_exists = os.path.exists('config.json')
+        # Actually try to detect ThorLabs hardware
+        import clr
+        KINESIS_PATH = r"C:\Program Files\Thorlabs\Kinesis"
+        clr.AddReference(os.path.join(KINESIS_PATH, "Thorlabs.MotionControl.DeviceManagerCLI.dll"))
+        from Thorlabs.MotionControl.DeviceManagerCLI import DeviceManagerCLI
         
-        mode = 'unknown'
-        if config_exists:
-            with open('config.json', 'r') as f:
-                config = json.load(f)
-                mode = 'hardware' if config.get('useRealHardware', False) else 'simulation'
+        # Build device list and check for polarizer
+        DeviceManagerCLI.BuildDeviceList()
+        device_list = DeviceManagerCLI.GetDeviceList()
         
-        return jsonify({
-            'bridge_running': True,
-            'config_exists': config_exists,
-            'current_mode': mode,
-            'location': '172.20.118.125'
-        })
+        DEVICE_ID = "38469684"  # Your ThorLabs device ID
+        
+        if device_list.Contains(DEVICE_ID):
+            result['hardware_connected'] = True
+            result['device_id'] = DEVICE_ID
+        else:
+            result['error'] = f'Device {DEVICE_ID} not found in device list'
+            result['available_devices'] = list(device_list)
+            
+    except ImportError as e:
+        result['error'] = f'ThorLabs SDK not installed: {str(e)}'
     except Exception as e:
-        return jsonify({
-            'bridge_running': True,
-            'error': str(e)
-        })
+        result['error'] = f'Hardware check failed: {str(e)}'
+    
+    return jsonify(result)
 
 if __name__ == '__main__':
     print("\n" + "="*70)
