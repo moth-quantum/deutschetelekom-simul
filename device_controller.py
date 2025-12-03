@@ -8,6 +8,8 @@ import json
 import sys
 import time
 import os
+import math
+import random
 
 # ============================================
 # MODE CONFIGURATION
@@ -153,6 +155,45 @@ def get_coincidences(channel_pairs, runtime=1, binwidth=100, n_bins=10000):
     TimeTagger.freeTimeTagger(tagger)
     
     return results
+
+
+def simulate_device_interaction(input_values):
+    """
+    Simulation mode: Generate fake coincidence data based on angles.
+    Mimics quantum entanglement behavior without real hardware.
+    
+    Input: 3 angle values from TouchDesigner
+    Output: 4 coincidence values (same format as real hardware)
+    """
+    angles = input_values[:3]
+    
+    # Convert to radians
+    theta1 = math.radians(angles[0])
+    theta2 = math.radians(angles[1])
+    theta3 = math.radians(angles[2])
+    
+    # Calculate angle difference for entanglement probability
+    delta_12 = abs(theta1 - theta2)
+    entangled_probability = math.cos(delta_12) ** 2
+    is_entangled = random.random() < entangled_probability
+    
+    if is_entangled:
+        # Entangled state: two high, two low
+        val1 = random.uniform(0.85, 0.99)
+        val2 = random.uniform(0.85, 0.99)
+        val3 = random.uniform(0.01, 0.15)
+        val4 = random.uniform(0.01, 0.15)
+        if random.random() < 0.5:
+            val1, val3 = val3, val1
+            val2, val4 = val4, val2
+    else:
+        # Non-entangled: distributed values
+        val1 = max(0.0, min(1.0, 0.5 + 0.3 * math.cos(2 * theta1) + random.uniform(-0.1, 0.1)))
+        val2 = max(0.0, min(1.0, 0.5 + 0.3 * math.cos(2 * theta2) + random.uniform(-0.1, 0.1)))
+        val3 = max(0.0, min(1.0, 0.5 + 0.3 * math.sin(theta1 + theta2) + random.uniform(-0.1, 0.1)))
+        val4 = max(0.0, min(1.0, 0.5 + 0.3 * math.sin(theta1 - theta3) + random.uniform(-0.1, 0.1)))
+    
+    return [val1, val2, val3, val4]
 
 
 def process_input(input_values):
