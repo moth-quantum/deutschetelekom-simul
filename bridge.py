@@ -79,12 +79,15 @@ def execute_hardware():
         
         # Parse output
         if not result.stdout.strip():
+            print(f"[BRIDGE] ERROR: Device controller produced no stdout", flush=True)
+            print(f"[BRIDGE] Return code: {result.returncode}", flush=True)
             return jsonify({
                 'success': False,
                 'error': 'Device controller produced no output'
             }), 500
         
         try:
+            print(f"[BRIDGE] Raw stdout: {result.stdout[:200]}", flush=True)  # First 200 chars
             output_data = json.loads(result.stdout)
             print(f"[BRIDGE] Success! Returning to Heroku: {output_data}", flush=True)
             
@@ -94,6 +97,9 @@ def execute_hardware():
             })
             
         except json.JSONDecodeError as e:
+            print(f"[BRIDGE] ERROR: Invalid JSON from device", flush=True)
+            print(f"[BRIDGE] JSON error: {str(e)}", flush=True)
+            print(f"[BRIDGE] Raw stdout: {result.stdout}", flush=True)
             return jsonify({
                 'success': False,
                 'error': f'Invalid JSON from device: {str(e)}'

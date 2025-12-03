@@ -44,9 +44,9 @@ if USE_REAL_HARDWARE:
     # TimeTagger
     import TimeTagger
 
-    print("Hardware is connected.")
+    print("Hardware is connected.", file=sys.stderr, flush=True)
 else:
-    print("Hardware is not connected. Debug on RDP.")
+    print("Hardware is not connected. Debug on RDP.", file=sys.stderr, flush=True)
 
 def control_real_hardware(input_values):
     """
@@ -117,24 +117,26 @@ def control_real_hardware(input_values):
         return peaks
         
     except Exception as e:
+        import traceback
         print(f"Hardware Error: {e}", file=sys.stderr, flush=True)
+        print(f"Traceback: {traceback.format_exc()}", file=sys.stderr, flush=True)
         # Return zeros if hardware fails
         return [0, 0, 0, 0]
 
 
 def get_coincidences(channel_pairs, runtime=1, binwidth=100, n_bins=10000):
     """
-    Measure coincidences from TimeTagger
+    Measure coincidences from TimeTagger (from notebook cell 10)
     Returns: dict {(ch1,ch2): (hist_data, hist_bins)}
     """
     tagger = TimeTagger.createTimeTagger()
     
-    # Set trigger levels
+    # Set trigger levels for all involved channels
     all_channels = set(ch for pair in channel_pairs for ch in pair)
     for ch in all_channels:
         tagger.setTriggerLevel(ch, 0.5)
     
-    # Create histogram modules
+    # Create histogram modules for all channel pairs
     hists = {}
     for ch1, ch2 in channel_pairs:
         hists[(ch1, ch2)] = TimeTagger.Correlation(
@@ -142,7 +144,7 @@ def get_coincidences(channel_pairs, runtime=1, binwidth=100, n_bins=10000):
             binwidth=binwidth, n_bins=n_bins
         )
     
-    # Wait for measurement
+    # Wait for measurement (Correlation measures in background)
     time.sleep(runtime)
     
     # Collect results
