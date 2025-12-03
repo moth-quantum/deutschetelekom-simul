@@ -161,41 +161,51 @@ def get_coincidences(channel_pairs, runtime=1, binwidth=100, n_bins=10000):
 
 def simulate_device_interaction(input_values):
     """
-    Simulation mode: Generate fake coincidence data based on angles.
-    Mimics quantum entanglement behavior without real hardware.
+    Simulation mode: Generate fake coincidence peaks based on angles.
+    Mimics quantum entanglement behavior - returns 4 peak values matching real hardware.
     
-    Input: 3 angle values from TouchDesigner
-    Output: 4 coincidence values (same format as real hardware)
+    Input: 3 paddle angles from TouchDesigner (0-170 degrees)
+    Output: 4 coincidence peak counts for channel pairs (5,7), (6,8), (5,8), (6,7)
+    
+    Goal: Maximize (5,7) & (6,8) and minimize (5,8) & (6,7) when entangled
+          OR vice versa depending on polarization configuration
     """
-    angles = input_values[:3]
+    angle1, angle2, angle3 = input_values[:3]
     
-    # Convert to radians
-    theta1 = math.radians(angles[0])
-    theta2 = math.radians(angles[1])
-    theta3 = math.radians(angles[2])
+    # Define "sweet spot" angles that create entanglement (example: 45, 90, 135)
+    target_angles = [45, 90, 135]
     
-    # Calculate angle difference for entanglement probability
-    delta_12 = abs(theta1 - theta2)
-    entangled_probability = math.cos(delta_12) ** 2
-    is_entangled = random.random() < entangled_probability
+    # Calculate how close we are to the sweet spot (0 = perfect, higher = worse)
+    distance = sum(abs(angle - target) for angle, target in zip([angle1, angle2, angle3], target_angles))
     
-    if is_entangled:
-        # Entangled state: two high, two low
-        val1 = random.uniform(0.85, 0.99)
-        val2 = random.uniform(0.85, 0.99)
-        val3 = random.uniform(0.01, 0.15)
-        val4 = random.uniform(0.01, 0.15)
-        if random.random() < 0.5:
-            val1, val3 = val3, val1
-            val2, val4 = val4, val2
+    # Normalize distance to 0-1 (0 = perfect match, 1 = far away)
+    max_distance = 170 * 3  # Maximum possible distance
+    entanglement_strength = 1.0 - min(distance / max_distance, 1.0)
+    
+    # Base counts when no entanglement (random noise)
+    base_noise = 50
+    
+    # Maximum counts when perfectly entangled
+    max_count = 1200
+    
+    # Determine which pattern based on angle3 (third paddle determines basis)
+    use_pattern_A = (angle3 % 180) < 90
+    
+    if use_pattern_A:
+        # Pattern A: Maximize (5,7) and (6,8), minimize (5,8) and (6,7)
+        peak_57 = int(base_noise + entanglement_strength * max_count + random.randint(-30, 30))
+        peak_68 = int(base_noise + entanglement_strength * max_count + random.randint(-30, 30))
+        peak_58 = int(base_noise + (1 - entanglement_strength) * 200 + random.randint(-20, 20))
+        peak_67 = int(base_noise + (1 - entanglement_strength) * 200 + random.randint(-20, 20))
     else:
-        # Non-entangled: distributed values
-        val1 = max(0.0, min(1.0, 0.5 + 0.3 * math.cos(2 * theta1) + random.uniform(-0.1, 0.1)))
-        val2 = max(0.0, min(1.0, 0.5 + 0.3 * math.cos(2 * theta2) + random.uniform(-0.1, 0.1)))
-        val3 = max(0.0, min(1.0, 0.5 + 0.3 * math.sin(theta1 + theta2) + random.uniform(-0.1, 0.1)))
-        val4 = max(0.0, min(1.0, 0.5 + 0.3 * math.sin(theta1 - theta3) + random.uniform(-0.1, 0.1)))
+        # Pattern B: Minimize (5,7) and (6,8), maximize (5,8) and (6,7)
+        peak_57 = int(base_noise + (1 - entanglement_strength) * 200 + random.randint(-20, 20))
+        peak_68 = int(base_noise + (1 - entanglement_strength) * 200 + random.randint(-20, 20))
+        peak_58 = int(base_noise + entanglement_strength * max_count + random.randint(-30, 30))
+        peak_67 = int(base_noise + entanglement_strength * max_count + random.randint(-30, 30))
     
-    return [val1, val2, val3, val4]
+    # Return peaks in order: (5,7), (6,8), (5,8), (6,7)
+    return [max(0, peak_57), max(0, peak_68), max(0, peak_58), max(0, peak_67)]
 
 
 def process_input(input_values):
