@@ -177,9 +177,8 @@ def simulate_device_interaction(input_values):
         peak_58 = int(random.uniform(0, int(random.uniform(500, 100000))))
         peak_67 = int(random.uniform(0, int(random.uniform(500, 100000))))
     else:
-        pair01 = [peak_57, peak_68]
-        pair02 = [peak_58, peak_67]
-        who = int(random(1, 3))
+        # Randomly choose which pair to enhance
+        who = int(random.uniform(1, 3))
         if who == 1:
             peak_57 = 788
             peak_68 = 700
