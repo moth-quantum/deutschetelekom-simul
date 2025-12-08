@@ -96,7 +96,7 @@ def control_real_hardware(input_values):
         
         # ===== STEP 3: Read coincidence data from TimeTagger =====
         runtime = 1 # sec
-        channel_pairs = [(5, 7), (6, 8), (5, 8), (6, 7)]
+        channel_pairs = [(5, 6), (8, 7), (5, 7), (8, 6)]
         
         results = get_coincidences(channel_pairs, runtime=runtime)
         
@@ -164,7 +164,7 @@ def simulate_device_interaction(input_values):
     Simulation mode: Generate fake coincidence peaks.
     
     Input: 3 paddle angles from TouchDesigner (0-170 degrees)
-    Output: 4 coincidence peak counts for channel pairs (5,7), (6,8), (5,8), (6,7)
+    Output: 4 coincidence peak counts for channel pairs (5, 6), (8, 7), (5, 7), (8, 6)
     """
     angle1, angle2, angle3 = input_values[:3]
     
@@ -175,24 +175,24 @@ def simulate_device_interaction(input_values):
         # Randomly choose which pair to enhance
         who = int(random.uniform(1, 3))
         if who == 1:
-            peak_57 = 788
-            peak_68 = 700
-            peak_58 = 35
-            peak_67 = 20
-        else:
+            peak_56 = 788
+            peak_87 = 700
             peak_57 = 35
-            peak_68 = 20
-            peak_58 = 788
-            peak_67 = 700
+            peak_86 = 20
+        else:
+            peak_56 = 35
+            peak_87 = 20
+            peak_57 = 788
+            peak_86 = 700
     else:
+        peak_56 = int(random.uniform(0, int(random.uniform(500, 100000))))
+        peak_87 = int(random.uniform(0, int(random.uniform(500, 100000))))
         peak_57 = int(random.uniform(0, int(random.uniform(500, 100000))))
-        peak_68 = int(random.uniform(0, int(random.uniform(500, 100000))))
-        peak_58 = int(random.uniform(0, int(random.uniform(500, 100000))))
-        peak_67 = int(random.uniform(0, int(random.uniform(500, 100000))))
+        peak_86 = int(random.uniform(0, int(random.uniform(500, 100000))))
         
     
     time.sleep(11.0) # To simulate the hardware delay as well
-    return [peak_57, peak_68, peak_58, peak_67] # Return peaks in order: (5,7), (6,8), (5,8), (6,7)
+    return [peak_56, peak_87, peak_57, peak_86] # Return peaks in order: (5,6), (8,7), (5,7), (8,6)
 
 
 def process_input(input_values):
