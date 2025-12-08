@@ -95,10 +95,10 @@ def control_real_hardware(input_values):
         print(f"Moved paddles to: [{angle1}, {angle2}, {angle3}]", file=sys.stderr, flush=True)
         
         # ===== STEP 3: Read coincidence data from TimeTagger =====
-        runtime = 3e12 # sec
+        runtime = 3  # sec
         channel_pairs = [(5, 6), (8, 7), (5, 7), (8, 6)]
         
-        # Set measurement time to 3 seconds (3e12 ps)
+        # Set measurement time to 3 seconds
         results = get_coincidences(channel_pairs, runtime)
         
         # Extract peak values from each channel pair
@@ -125,7 +125,7 @@ def control_real_hardware(input_values):
         return [0, 0, 0, 0]
 
 
-def get_coincidences(channel_pairs, runtime=3e12, binwidth=100, n_bins=10000):
+def get_coincidences(channel_pairs, runtime=3, binwidth=100, n_bins=10000):
     """
     Measure coincidences from TimeTagger (from notebook cell 10)
     Returns: dict {(ch1,ch2): (hist_data, hist_bins)}
