@@ -172,14 +172,14 @@ def simulate_device_interaction(input_values):
     target_angles = [45, 90, 135]
 
     if (int(angle1) != target_angles[0], int(angle2) != target_angles[1], int(angle3) != target_angles[2]):
-        peak_57 = random_integers(0, random_integers(500, 100000))
-        peak_68 = random_integers(0, random_integers(500, 100000))
-        peak_58 = random_integers(0, random_integers(500, 100000))
-        peak_67 = random_integers(0, random_integers(500, 100000))
+        peak_57 = int(random(0, int(random(500, 100000))))
+        peak_68 = int(random(0, int(random(500, 100000))))
+        peak_58 = int(random(0, int(random(500, 100000))))
+        peak_67 = int(random(0, int(random(500, 100000))))
     else:
         pair01 = [peak_57, peak_68]
         pair02 = [peak_58, peak_67]
-        who = random_integers(1, 3)
+        who = int(random(1, 3))
         if who == 1:
             peak_57 = 788
             peak_68 = 700
