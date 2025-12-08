@@ -171,7 +171,7 @@ def simulate_device_interaction(input_values):
     # Define "sweet spot" angles that create entanglement (example: 45, 90, 135)
     target_angles = [0, 0, 0]
 
-    if (int(angle1) != target_angles[0], int(angle2) != target_angles[1], int(angle3) != target_angles[2]):
+    if (angle1 != target_angles[0], angle2 != target_angles[1], angle3 != target_angles[2]):
         peak_57 = random.randint(0, random.randint(500, 100000))
         peak_68 = random.randint(0, random.randint(500, 100000))
         peak_58 = random.randint(0, random.randint(500, 100000))
