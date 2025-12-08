@@ -169,15 +169,17 @@ def simulate_device_interaction(input_values):
     angle1, angle2, angle3 = input_values[:3]
     
     # Define "sweet spot" angles that create entanglement (example: 45, 90, 135)
-    target_angles = [0, 0, 0]
+    target_angles = [45, 90, 135]
 
-    if (angle1 != target_angles[0], angle2 != target_angles[1], angle3 != target_angles[2]):
-        peak_57 = random.randint(0, random.randint(500, 100000))
-        peak_68 = random.randint(0, random.randint(500, 100000))
-        peak_58 = random.randint(0, random.randint(500, 100000))
-        peak_67 = random.randint(0, random.randint(500, 100000))
+    if int(angle1) != target_angles[0] and int(angle2) != target_angles[1] and int(angle3) != target_angles[2]:
+        peak_57 = int(random.uniform(0, int(random.uniform(500, 100000))))
+        peak_68 = int(random.uniform(0, int(random.uniform(500, 100000))))
+        peak_58 = int(random.uniform(0, int(random.uniform(500, 100000))))
+        peak_67 = int(random.uniform(0, int(random.uniform(500, 100000))))
     else:
-        who = int(random.random() * 2) + 1  # random(1, 3) -> 1 or 2
+        pair01 = [peak_57, peak_68]
+        pair02 = [peak_58, peak_67]
+        who = int(random(1, 3))
         if who == 1:
             peak_57 = 788
             peak_68 = 700
