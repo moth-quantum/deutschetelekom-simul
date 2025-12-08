@@ -177,8 +177,8 @@ def get_coincidences(channel_pairs, runtime=3, binwidth_ps=10):
             results[(ch1, ch2)] = (0, None)
             try:
                 TimeTagger.freeTimeTagger(tagger)
-            except:
-                pass
+            except Exception as e:
+                print(f"Failed to free TimeTagger: {e}", file=sys.stderr, flush=True)
     
     return results
 
