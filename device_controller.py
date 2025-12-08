@@ -175,6 +175,10 @@ def get_coincidences(channel_pairs, runtime=3, binwidth_ps=10):
         except Exception as e:
             print(f"Error measuring coincidence for channels {ch1}-{ch2}: {e}", file=sys.stderr, flush=True)
             results[(ch1, ch2)] = (0, None)
+            try:
+                TimeTagger.freeTimeTagger(tagger)
+            except:
+                pass
     
     return results
 
