@@ -171,7 +171,7 @@ def simulate_device_interaction(input_values):
     # Define "sweet spot" angles that create entanglement (example: 45, 90, 135)
     target_angles = [45, 90, 135]
 
-    if (int(angle1) == target_angles[0], int(angle2) == target_angles[1], int(angle3) == target_angles[2]):
+    if (int(angle1) != target_angles[0], int(angle2) != target_angles[1], int(angle3) != target_angles[2]):
         peak_57 = random_integers(0, random_integers(500, 100000))
         peak_68 = random_integers(0, random_integers(500, 100000))
         peak_58 = random_integers(0, random_integers(500, 100000))
@@ -181,11 +181,15 @@ def simulate_device_interaction(input_values):
         pair02 = [peak_58, peak_67]
         who = random_integers(1, 3)
         if who == 1:
-            pair01 = [788, 700]
-            pair02 = [35, 20]
+            peak_57 = 788
+            peak_68 = 700
+            peak_58 = 35
+            peak_67 = 20
         else:
-            pair01 = [35, 20]
-            pair02 = [788, 700]
+            peak_57 = 35
+            peak_68 = 20
+            peak_58 = 788
+            peak_67 = 700
     
     time.sleep(11.0) # To simulate the hardware delay as well
     return [peak_57, peak_68, peak_58, peak_67] # Return peaks in order: (5,7), (6,8), (5,8), (6,7)
