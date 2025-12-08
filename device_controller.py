@@ -169,7 +169,7 @@ def simulate_device_interaction(input_values):
     angle1, angle2, angle3 = input_values[:3]
     
     # Define "sweet spot" angles that create entanglement (example: 45, 90, 135)
-    target_angles = [0, 0, 0]
+    target_angles = [45, 90, 135]
 
     if int(angle1) != target_angles[0] and int(angle2) != target_angles[1] and int(angle3) != target_angles[2]:
         peak_57 = int(random.uniform(0, int(random.uniform(500, 100000))))
@@ -221,7 +221,7 @@ if __name__ == "__main__":
     # For testing: Use default values if no input
     if sys.stdin.isatty():
         # Running interactively - use test values
-        test_input = [0, 0, 0]
+        test_input = [45, 90, 135]
         result = process_input(test_input)
         print(json.dumps({"entanglement": result}), flush=True)
     else:
