@@ -95,14 +95,20 @@ def control_real_hardware(input_values):
         print(f"Moved paddles to: [{angle1}, {angle2}, {angle3}]", file=sys.stderr, flush=True)
         
         # ===== STEP 3: Read coincidence data from TimeTagger =====
-        runtime = 3  # sec
+        runtime = int(3e12)  # picoseconds (3 seconds)
         channel_pairs = [(5, 6), (8, 7), (5, 7), (8, 6)]
         
-        # Set measurement time to 3 seconds
-        results = get_coincidences(channel_pairs, runtime)
-        
-        # Extract peak values from each channel pair
-        peaks = [max(results[pair][0]) for pair in channel_pairs]
+        try:
+            # Get coincidence counts for all channel pairs
+            results = get_coincidences(channel_pairs, runtime=runtime)
+            
+            # Extract peak values from each channel pair
+            peaks = [results[pair][0] for pair in channel_pairs]
+            print(f"Coincidence counts: {peaks}", file=sys.stderr, flush=True)
+            
+        except Exception as e:
+            print(f"Error in coincidence counting: {e}", file=sys.stderr, flush=True)
+            peaks = [0, 0, 0, 0]
         
         # ===== STEP 4: Cleanup =====
         # Return paddles to home position
@@ -127,25 +133,37 @@ def control_real_hardware(input_values):
 
 def get_coincidences(channel_pairs, runtime=3, binwidth=100, n_bins=10000):
     """
-    Measure coincidences from TimeTagger (from notebook cell 10)
-    Returns: dict {(ch1,ch2): (hist_data, hist_bins)}
+    Measure coincidences from TimeTagger
+    
+    Args:
+        channel_pairs: List of tuples (ch1, ch2) for coincidence counting
+        runtime: Measurement time in seconds
+        binwidth: Width of time bins in picoseconds
+        n_bins: Number of bins for correlation histogram
+        
+    Returns:
+        dict: {(ch1, ch2): (counts, bins)} for each channel pair
     """
+    # Create TimeTagger instance
     tagger = TimeTagger.createTimeTagger()
     
-    # Set trigger levels for all involved channels
+    # Set trigger levels for all involved channels (0.5V threshold)
     all_channels = set(ch for pair in channel_pairs for ch in pair)
     for ch in all_channels:
         tagger.setTriggerLevel(ch, 0.5)
     
-    # Create histogram modules for all channel pairs
+    # Create correlation measurements for all channel pairs
     hists = {}
     for ch1, ch2 in channel_pairs:
         hists[(ch1, ch2)] = TimeTagger.Correlation(
-            tagger, channel_1=ch1, channel_2=ch2,
-            binwidth=binwidth, n_bins=n_bins
+            tagger, 
+            channel_1=ch1, 
+            channel_2=ch2,
+            binwidth=binwidth, 
+            n_bins=n_bins
         )
     
-    # Wait for measurement (Correlation measures in background)
+    # Wait for the specified measurement time
     time.sleep(runtime)
     
     # Collect results
@@ -153,7 +171,12 @@ def get_coincidences(channel_pairs, runtime=3, binwidth=100, n_bins=10000):
     for pair, hist in hists.items():
         hist_data = hist.getData()
         hist_bins = hist.getIndex()
-        results[pair] = (hist_data, hist_bins)
+        # Store the maximum value as the coincidence count (peak value)
+        results[pair] = (np.max(hist_data), hist_bins)
+    
+    # Clean up
+    for hist in hists.values():
+        del hist
     
     TimeTagger.freeTimeTagger(tagger)
     
