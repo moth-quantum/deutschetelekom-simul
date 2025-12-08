@@ -131,54 +131,50 @@ def control_real_hardware(input_values):
         return [0, 0, 0, 0]
 
 
-def get_coincidences(channel_pairs, runtime=3, binwidth=100, n_bins=10000):
+def get_coincidences(channel_pairs, runtime=3, binwidth_ps=10):
     """
-    Measure coincidences from TimeTagger
+    Measure coincidences from TimeTagger using the same method as Coincidence_counts.py
     
     Args:
         channel_pairs: List of tuples (ch1, ch2) for coincidence counting
         runtime: Measurement time in seconds
-        binwidth: Width of time bins in picoseconds
-        n_bins: Number of bins for correlation histogram
+        binwidth_ps: Width of time bins in picoseconds (default: 10ps)
         
     Returns:
-        dict: {(ch1, ch2): (counts, bins)} for each channel pair
+        dict: {(ch1, ch2): (max_counts, None)} for each channel pair
     """
-    # Create TimeTagger instance
-    tagger = TimeTagger.createTimeTagger()
-    
-    # Set trigger levels for all involved channels (0.5V threshold)
-    all_channels = set(ch for pair in channel_pairs for ch in pair)
-    for ch in all_channels:
-        tagger.setTriggerLevel(ch, 0.5)
-    
-    # Create correlation measurements for all channel pairs
-    hists = {}
-    for ch1, ch2 in channel_pairs:
-        hists[(ch1, ch2)] = TimeTagger.Correlation(
-            tagger, 
-            channel_1=ch1, 
-            channel_2=ch2,
-            binwidth=binwidth, 
-            n_bins=n_bins
-        )
-    
-    # Wait for the specified measurement time
-    time.sleep(runtime)
-    
-    # Collect results
+    measurement_time_ps = int(runtime * 1e12)  # Convert seconds to picoseconds
     results = {}
-    for pair, hist in hists.items():
-        hist_data = hist.getData()
-        hist_bins = hist.getIndex()
-        # Store the maximum value as the coincidence count (peak value)
-        results[pair] = (np.max(hist_data), hist_bins)
     
-    # Clean up
-    for hist in hists.values():
-        del hist
-    
-    TimeTagger.freeTimeTagger(tagger)
+    for ch1, ch2 in channel_pairs:
+        try:
+            # Create new TimeTagger instance for each measurement to match Coincidence_counts.py
+            tagger = TimeTagger.createTimeTagger()
+            tagger.setTriggerLevel(ch1, 0.5)
+            tagger.setTriggerLevel(ch2, 0.5)
+            
+            # Create correlation with same parameters as Coincidence_counts.py
+            corr = TimeTagger.Correlation(tagger, ch1, ch2, binwidth_ps, n_bins=10000)
+            
+            # Use startFor and waitUntilFinished instead of time.sleep()
+            corr.startFor(measurement_time_ps, clear=True)
+            corr.waitUntilFinished()
+            time.sleep(0.5)  # Small delay to ensure data is ready
+            
+            # Get max counts from histogram
+            hist = corr.getData()
+            max_counts = int(np.max(hist))
+            
+            # Store result
+            results[(ch1, ch2)] = (max_counts, None)
+            
+            # Clean up
+            del corr
+            TimeTagger.freeTimeTagger(tagger)
+            
+        except Exception as e:
+            print(f"Error measuring coincidence for channels {ch1}-{ch2}: {e}", file=sys.stderr, flush=True)
+            results[(ch1, ch2)] = (0, None)
     
     return results
 
@@ -213,7 +209,6 @@ def simulate_device_interaction(input_values):
         peak_87 = int(random.uniform(0, int(random.uniform(500, 100000))))
         peak_57 = int(random.uniform(0, int(random.uniform(500, 100000))))
         peak_86 = int(random.uniform(0, int(random.uniform(500, 100000))))
-        
     
     time.sleep(11.0) # To simulate the hardware delay as well
     return [peak_56, peak_87, peak_57, peak_86] # Return peaks in order: (5,6), (8,7), (5,7), (8,6)
