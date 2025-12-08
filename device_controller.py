@@ -161,51 +161,34 @@ def get_coincidences(channel_pairs, runtime=1, binwidth=100, n_bins=10000):
 
 def simulate_device_interaction(input_values):
     """
-    Simulation mode: Generate fake coincidence peaks based on angles.
-    Mimics quantum entanglement behavior - returns 4 peak values matching real hardware.
+    Simulation mode: Generate fake coincidence peaks.
     
     Input: 3 paddle angles from TouchDesigner (0-170 degrees)
     Output: 4 coincidence peak counts for channel pairs (5,7), (6,8), (5,8), (6,7)
-    
-    Goal: Maximize (5,7) & (6,8) and minimize (5,8) & (6,7) when entangled
-          OR vice versa depending on polarization configuration
     """
     angle1, angle2, angle3 = input_values[:3]
     
     # Define "sweet spot" angles that create entanglement (example: 45, 90, 135)
     target_angles = [45, 90, 135]
-    
-    # Calculate how close we are to the sweet spot (0 = perfect, higher = worse)
-    distance = sum(abs(angle - target) for angle, target in zip([angle1, angle2, angle3], target_angles))
-    
-    # Normalize distance to 0-1 (0 = perfect match, 1 = far away)
-    max_distance = 170 * 3  # Maximum possible distance
-    entanglement_strength = 1.0 - min(distance / max_distance, 1.0)
-    
-    # Base counts when no entanglement (random noise)
-    base_noise = 50
-    
-    # Maximum counts when perfectly entangled
-    max_count = 1200
-    
-    # Determine which pattern based on angle3 (third paddle determines basis)
-    use_pattern_A = (angle3 % 180) < 90
-    
-    if use_pattern_A:
-        # Pattern A: Maximize (5,7) and (6,8), minimize (5,8) and (6,7)
-        peak_57 = int(base_noise + entanglement_strength * max_count + random.randint(-30, 30))
-        peak_68 = int(base_noise + entanglement_strength * max_count + random.randint(-30, 30))
-        peak_58 = int(base_noise + (1 - entanglement_strength) * 200 + random.randint(-20, 20))
-        peak_67 = int(base_noise + (1 - entanglement_strength) * 200 + random.randint(-20, 20))
+
+    if (int(angle1) == target_angles[0], int(angle2) == target_angles[1], int(angle3) == target_angles[2]):
+        peak_57 = random_integers(0, random_integers(500, 100000))
+        peak_68 = random_integers(0, random_integers(500, 100000))
+        peak_58 = random_integers(0, random_integers(500, 100000))
+        peak_67 = random_integers(0, random_integers(500, 100000))
     else:
-        # Pattern B: Minimize (5,7) and (6,8), maximize (5,8) and (6,7)
-        peak_57 = int(base_noise + (1 - entanglement_strength) * 200 + random.randint(-20, 20))
-        peak_68 = int(base_noise + (1 - entanglement_strength) * 200 + random.randint(-20, 20))
-        peak_58 = int(base_noise + entanglement_strength * max_count + random.randint(-30, 30))
-        peak_67 = int(base_noise + entanglement_strength * max_count + random.randint(-30, 30))
+        pair01 = [peak_57, peak_68]
+        pair02 = [peak_58, peak_67]
+        who = random_integers(1, 3)
+        if who == 1:
+            pair01 = [788, 700]
+            pair02 = [35, 20]
+        else:
+            pair01 = [35, 20]
+            pair02 = [788, 700]
     
-    # Return peaks in order: (5,7), (6,8), (5,8), (6,7)
-    return [max(0, peak_57), max(0, peak_68), max(0, peak_58), max(0, peak_67)]
+    time.sleep(11.0) # To simulate the hardware delay as well
+    return [peak_57, peak_68, peak_58, peak_67] # Return peaks in order: (5,7), (6,8), (5,8), (6,7)
 
 
 def process_input(input_values):
