@@ -95,7 +95,7 @@ def control_real_hardware(input_values):
         print(f"Moved paddles to: [{angle1}, {angle2}, {angle3}]", file=sys.stderr, flush=True)
         
         # ===== STEP 3: Read coincidence data from TimeTagger =====
-        runtime = int(3e12)  # picoseconds (3 seconds)
+        runtime = 3  # sec
         channel_pairs = [(5, 6), (8, 7), (5, 7), (8, 6)]
         
         try:
