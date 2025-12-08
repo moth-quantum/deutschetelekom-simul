@@ -171,12 +171,7 @@ def simulate_device_interaction(input_values):
     # Define "sweet spot" angles that create entanglement (example: 45, 90, 135)
     target_angles = [45, 90, 135]
 
-    if int(angle1) != target_angles[0] and int(angle2) != target_angles[1] and int(angle3) != target_angles[2]:
-        peak_57 = int(random.uniform(0, int(random.uniform(500, 100000))))
-        peak_68 = int(random.uniform(0, int(random.uniform(500, 100000))))
-        peak_58 = int(random.uniform(0, int(random.uniform(500, 100000))))
-        peak_67 = int(random.uniform(0, int(random.uniform(500, 100000))))
-    else:
+    if int(angle1) == target_angles[0] and int(angle2) == target_angles[1] and int(angle3) == target_angles[2]:
         # Randomly choose which pair to enhance
         who = int(random.uniform(1, 3))
         if who == 1:
@@ -189,6 +184,12 @@ def simulate_device_interaction(input_values):
             peak_68 = 20
             peak_58 = 788
             peak_67 = 700
+    else:
+        peak_57 = int(random.uniform(0, int(random.uniform(500, 100000))))
+        peak_68 = int(random.uniform(0, int(random.uniform(500, 100000))))
+        peak_58 = int(random.uniform(0, int(random.uniform(500, 100000))))
+        peak_67 = int(random.uniform(0, int(random.uniform(500, 100000))))
+        
     
     time.sleep(11.0) # To simulate the hardware delay as well
     return [peak_57, peak_68, peak_58, peak_67] # Return peaks in order: (5,7), (6,8), (5,8), (6,7)
