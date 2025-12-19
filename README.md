@@ -1,2 +1,3 @@
-# deutschetelekom-simul
-Simulation Node.js app to support live audiovisual production.
+# Server app for T-Lab x MOTH TouchDesigner project
+
+- Purpose: Provides direct connection between the remote desktop in T-Lab and TouchDesigner client.
