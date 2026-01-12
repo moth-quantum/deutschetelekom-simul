@@ -192,7 +192,6 @@ def simulate_device_interaction(input_values):
     """
     angle1, angle2, angle3 = input_values[:3]
     
-    # Define "sweet spot" angles that create entanglement (example: 45, 90, 135)
     target_angles = [61, 80, 101] # On the TouchDesigner side, the MIDI knob controller will show 48, 63, 80.
 
     if int(angle1) == target_angles[0] and int(angle2) == target_angles[1] and int(angle3) == target_angles[2]:
