@@ -56,11 +56,11 @@ def execute_hardware():
         env['USE_REAL_HARDWARE'] = 'true'  # Bridge always uses real hardware
         
         result = subprocess.run(
-            ['python', DEVICE_CONTROLLER_PATH],
+            ['python3', DEVICE_CONTROLLER_PATH],
             input=device_input,
             capture_output=True,
             text=True,
-            timeout=120,  # 2 minute timeout for hardware operations
+            # timeout=120,  # 2 minute timeout for hardware operations
             env=env
         )
         
