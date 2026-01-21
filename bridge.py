@@ -2,21 +2,33 @@
 Local Bridge Service for Windows Machine (172.20.118.125)
 Run this ON THE WINDOWS MACHINE via RoyalTSX
 Exposes hardware control via HTTP API
+
+OPTIMIZED: Persistent hardware connection - no subprocess overhead
 """
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import subprocess
 import json
 import sys
 import os
+import traceback
 
 app = Flask(__name__)
 CORS(app)  # Allow requests from Heroku
 
 # Configuration
 PORT = 5000
-DEVICE_CONTROLLER_PATH = './Documents/GitHub/deutschetelekom-simul/device_controller.py'
+
+# Import hardware control directly (no subprocess)
+os.environ['USE_REAL_HARDWARE'] = 'true'
+try:
+    from device_controller import control_real_hardware
+    HARDWARE_AVAILABLE = True
+    print("[BRIDGE] Hardware control module loaded successfully", flush=True)
+except ImportError as e:
+    HARDWARE_AVAILABLE = False
+    print(f"[BRIDGE] WARNING: Could not load hardware module: {e}", flush=True)
+    print("[BRIDGE] Running in degraded mode - hardware calls will fail", flush=True)
 
 @app.route('/', methods=['GET'])
 def health_check():
@@ -31,12 +43,21 @@ def health_check():
 @app.route('/api/hardware/execute', methods=['POST'])
 def execute_hardware():
     """
-    Receives commands from Heroku → Executes device_controller.py → Returns results
+    OPTIMIZED: Direct function call instead of subprocess
+    
+    Receives commands from Heroku → Calls control_real_hardware() → Returns results
     
     POST body: { "knob_values": [val1, val2, val3] }
     Returns: { "success": true, "data": { "entanglement": [...] } }
     """
     try:
+        # Check if hardware is available
+        if not HARDWARE_AVAILABLE:
+            return jsonify({
+                'success': False,
+                'error': 'Hardware module not loaded - check bridge startup logs'
+            }), 503
+        
         data = request.get_json()
         
         if not data or 'knob_values' not in data:
@@ -48,74 +69,29 @@ def execute_hardware():
         knob_values = data['knob_values']
         print(f"[BRIDGE] Received from Heroku: {knob_values}", flush=True)
         
-        # Prepare input for device_controller.py
-        device_input = json.dumps({'knob_values': knob_values})
+        # Call hardware control function directly (no subprocess overhead)
+        peaks = control_real_hardware(knob_values)
         
-        # Execute device_controller.py with hardware mode enabled
-        env = os.environ.copy()
-        env['USE_REAL_HARDWARE'] = 'true'  # Bridge always uses real hardware
+        # Format output to match expected structure
+        output_data = {
+            'entanglement': peaks
+        }
         
-        result = subprocess.run(
-            ['python3', DEVICE_CONTROLLER_PATH],
-            input=device_input,
-            capture_output=True,
-            text=True,
-            # timeout=120,  # 2 minute timeout for hardware operations
-            env=env
-        )
+        print(f"[BRIDGE] Success! Returning to Heroku: {output_data}", flush=True)
         
-        # Log stderr for debugging (even on success)
-        if result.stderr:
-            print(f"[BRIDGE] Device stderr: {result.stderr}", flush=True)
-        
-        # Check for errors
-        if result.returncode != 0:
-            error_msg = result.stderr or 'Unknown error'
-            print(f"[BRIDGE] Device controller error (exit {result.returncode}): {error_msg}", flush=True)
-            return jsonify({
-                'success': False,
-                'error': error_msg
-            }), 500
-        
-        # Parse output
-        if not result.stdout.strip():
-            print(f"[BRIDGE] ERROR: Device controller produced no stdout", flush=True)
-            print(f"[BRIDGE] Return code: {result.returncode}", flush=True)
-            return jsonify({
-                'success': False,
-                'error': 'Device controller produced no output'
-            }), 500
-        
-        try:
-            print(f"[BRIDGE] Raw stdout: {result.stdout[:200]}", flush=True)  # First 200 chars
-            output_data = json.loads(result.stdout)
-            print(f"[BRIDGE] Success! Returning to Heroku: {output_data}", flush=True)
-            
-            return jsonify({
-                'success': True,
-                'data': output_data
-            })
-            
-        except json.JSONDecodeError as e:
-            print(f"[BRIDGE] ERROR: Invalid JSON from device", flush=True)
-            print(f"[BRIDGE] JSON error: {str(e)}", flush=True)
-            print(f"[BRIDGE] Raw stdout: {result.stdout}", flush=True)
-            return jsonify({
-                'success': False,
-                'error': f'Invalid JSON from device: {str(e)}'
-            }), 500
-    
-    except subprocess.TimeoutExpired:
         return jsonify({
-            'success': False,
-            'error': 'Hardware operation timeout (>120s)'
-        }), 504
+            'success': True,
+            'data': output_data
+        })
     
     except Exception as e:
-        print(f"[BRIDGE] Error: {str(e)}", flush=True)
+        error_msg = f"{type(e).__name__}: {str(e)}"
+        print(f"[BRIDGE] Error: {error_msg}", flush=True)
+        print(f"[BRIDGE] Traceback:\n{traceback.format_exc()}", flush=True)
+        
         return jsonify({
             'success': False,
-            'error': str(e)
+            'error': error_msg
         }), 500
 
 @app.route('/api/status', methods=['GET'])

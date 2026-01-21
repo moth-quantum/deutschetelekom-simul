@@ -60,7 +60,7 @@ def control_real_hardware(input_values):
     # Device configuration
     DEVICE_ID = "38469684"  # Your ThorLabs device ID
     DEFAULT_TIMEOUT_MS = 2000
-    VELOCITY = 80  # percentage
+    VELOCITY = 90  # percentage
     
     try:
         # ===== STEP 1: Connect to polarization controller =====
@@ -133,7 +133,8 @@ def control_real_hardware(input_values):
 
 def get_coincidences(channel_pairs, runtime=3, binwidth_ps=10):
     """
-    Measure coincidences from TimeTagger using the same method as Coincidence_counts.py
+    OPTIMIZED: Measure all coincidences in parallel using a single TimeTagger instance.
+    This reduces measurement time from (runtime * num_pairs) to just runtime.
     
     Args:
         channel_pairs: List of tuples (ch1, ch2) for coincidence counting
@@ -141,43 +142,60 @@ def get_coincidences(channel_pairs, runtime=3, binwidth_ps=10):
         binwidth_ps: Width of time bins in picoseconds (default: 10ps)
         
     Returns:
-        dict: {(ch1, ch2): (max_counts, None)} for each channel pair
+        dict: {(ch1, ch2): max_counts} for each channel pair
     """
-    measurement_time_ps = int(runtime * 1e12)  # Convert seconds to picoseconds
+    measurement_time_ps = int(runtime * 1e12)
     results = {}
+    tagger = None
+    correlations = []
     
-    for ch1, ch2 in channel_pairs:
-        try:
-            # Create new TimeTagger instance for each measurement to match Coincidence_counts.py
-            tagger = TimeTagger.createTimeTagger()
-            tagger.setTriggerLevel(ch1, 0.5)
-            tagger.setTriggerLevel(ch2, 0.5)
-            
-            # Create correlation with same parameters as Coincidence_counts.py
+    try:
+        # Create single TimeTagger instance for all measurements
+        tagger = TimeTagger.createTimeTagger()
+        
+        # Set trigger levels for all unique channels
+        all_channels = set()
+        for ch1, ch2 in channel_pairs:
+            all_channels.update([ch1, ch2])
+        
+        for ch in all_channels:
+            tagger.setTriggerLevel(ch, 0.5)
+        
+        # Create all correlation objects
+        for ch1, ch2 in channel_pairs:
             corr = TimeTagger.Correlation(tagger, ch1, ch2, binwidth_ps, n_bins=10000)
-            
-            # Use startFor and waitUntilFinished instead of time.sleep()
+            correlations.append((ch1, ch2, corr))
+        
+        # Start all measurements simultaneously
+        for ch1, ch2, corr in correlations:
             corr.startFor(measurement_time_ps, clear=True)
+        
+        print(f"Started parallel measurements for {len(channel_pairs)} pairs (runtime={runtime}s)", file=sys.stderr, flush=True)
+        
+        # Wait for all to finish (they run in parallel, so total time = runtime, not runtime * num_pairs)
+        for ch1, ch2, corr in correlations:
             corr.waitUntilFinished()
-            time.sleep(0.5)  # Small delay to ensure data is ready
-            
-            # Get max counts from histogram
+        
+        # Extract results
+        for ch1, ch2, corr in correlations:
             hist = corr.getData()
-            max_counts = int(np.max(hist))
-            
-            # Store result
-            results[(ch1, ch2)] = (max_counts, None)
-
-
+            max_counts = np.max(hist)
+            results[(ch1, ch2)] = max_counts
             print(f"{ch1}-{ch2}: {max_counts}", file=sys.stderr, flush=True)
-            
-            # Clean up
             del corr
-            TimeTagger.freeTimeTagger(tagger)
-            
-        except Exception as e:
-            print(f"Error measuring coincidence for channels {ch1}-{ch2}: {e}", file=sys.stderr, flush=True)
-            results[(ch1, ch2)] = (0, None)
+        
+    except Exception as e:
+        print(f"Error in parallel coincidence measurement: {e}", file=sys.stderr, flush=True)
+        import traceback
+        print(f"Traceback: {traceback.format_exc()}", file=sys.stderr, flush=True)
+        
+        # Return zeros for all pairs on error
+        for ch1, ch2 in channel_pairs:
+            results[(ch1, ch2)] = 0
+    
+    finally:
+        # Always clean up TimeTagger
+        if tagger is not None:
             try:
                 TimeTagger.freeTimeTagger(tagger)
             except Exception as e:

@@ -29,7 +29,7 @@ def generate_numerical_data(angles=None):
     
     # Calculate angle differences (important for entanglement correlation)
     delta_12 = abs(theta1 - theta2)
-    delta_13 = abs(theta1 - theta3)
+    delta_13 = abs(theta1 - theta3) 
     delta_23 = abs(theta2 - theta3)
     
     # Determine if this should show entangled state
