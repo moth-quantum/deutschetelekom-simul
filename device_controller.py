@@ -103,7 +103,7 @@ def control_real_hardware(input_values):
             results = get_coincidences(channel_pairs, runtime=runtime)
             
             # Extract peak values from each channel pair
-            peaks = [results[pair][0] for pair in channel_pairs]
+            peaks = [results[pair] for pair in channel_pairs]
             print(f"Coincidence counts: {peaks}", file=sys.stderr, flush=True)
             
         except Exception as e:
