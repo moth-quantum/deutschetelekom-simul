@@ -60,7 +60,7 @@ def control_real_hardware(input_values):
     # Device configuration
     DEVICE_ID = "38469684"  # Your ThorLabs device ID
     DEFAULT_TIMEOUT_MS = 2000
-    VELOCITY = 50  # percentage
+    VELOCITY = 80  # percentage
     
     try:
         # ===== STEP 1: Connect to polarization controller =====
@@ -168,7 +168,7 @@ def get_coincidences(channel_pairs, runtime=3, binwidth_ps=10):
             # Store result
             results[(ch1, ch2)] = (max_counts, None)
 
-            
+
             print(f"{ch1}-{ch2}: {max_counts}", file=sys.stderr, flush=True)
             
             # Clean up
