@@ -96,7 +96,7 @@ def control_real_hardware(input_values):
         
         # ===== STEP 3: Read coincidence data from TimeTagger =====
         runtime = 3  # sec
-        channel_pairs = [(5, 6), (8, 7), (5, 7), (8, 6)]
+        channel_pairs = [(5, 6), (8, 7), (5, 7), (8, 6)] # 120, 350, 30, 1.6?k
         
         try:
             # Get coincidence counts for all channel pairs
@@ -167,6 +167,9 @@ def get_coincidences(channel_pairs, runtime=3, binwidth_ps=10):
             
             # Store result
             results[(ch1, ch2)] = (max_counts, None)
+
+            
+            print(f"{ch1}-{ch2}: {max_counts}", file=sys.stderr, flush=True)
             
             # Clean up
             del corr
