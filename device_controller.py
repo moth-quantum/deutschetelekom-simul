@@ -95,7 +95,7 @@ def control_real_hardware(input_values):
         print(f"Moved paddles to: [{angle1}, {angle2}, {angle3}]", file=sys.stderr, flush=True)
         
         # ===== STEP 3: Read coincidence data from TimeTagger =====
-        runtime = 3  # sec
+        runtime = 3  # sec (4, 5), (7, 6), (4, 6), (7, 5) - minus 1 from each
         channel_pairs = [(5, 6), (8, 7), (5, 7), (8, 6)] # 120, 350, 30, 1.6?k
         
         try:
@@ -110,6 +110,7 @@ def control_real_hardware(input_values):
             print(f"Error in coincidence counting: {e}", file=sys.stderr, flush=True)
             peaks = [0, 0, 0, 0]
         
+
         # ===== STEP 4: Cleanup =====
         # Return paddles to home position
         for i in range(3):
