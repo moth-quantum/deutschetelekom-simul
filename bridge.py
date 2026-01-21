@@ -16,7 +16,7 @@ CORS(app)  # Allow requests from Heroku
 
 # Configuration
 PORT = 5000
-DEVICE_CONTROLLER_PATH = 'device_controller.py'
+DEVICE_CONTROLLER_PATH = './Documents/GitHub/detuschetelekom-simuls/device_controller.py'
 
 @app.route('/', methods=['GET'])
 def health_check():
