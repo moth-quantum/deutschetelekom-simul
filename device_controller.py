@@ -236,7 +236,7 @@ def simulate_device_interaction(input_values):
         peak_57 = int(random.uniform(0, int(random.uniform(500, 100000))))
         peak_86 = int(random.uniform(0, int(random.uniform(500, 100000))))
     
-    time.sleep(11.0) # To simulate the hardware delay as well
+    # time.sleep(11.0) # To simulate the hardware delay as well => Now the delay is fixed
     return [peak_56, peak_87, peak_57, peak_86] # Return peaks in order: (5,6), (8,7), (5,7), (8,6)
 
 
