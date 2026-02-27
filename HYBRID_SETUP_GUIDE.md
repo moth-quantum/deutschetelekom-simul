@@ -1,6 +1,6 @@
 # Hybrid Architecture Setup Guide
 
-## Overview: Your Network Setup
+## This is the workflow between TD and remote server & H/W.
 
 ```text
 VPN-connected remote connection
@@ -11,7 +11,7 @@ Windows Machine (T-Labs)
   |- bridge.py (connect)
   +- device_controller.py (control)
 
-  ^ ngrok tunnel (makes H/W accessible )
+  ^ ngrok tunnel (makes H/W accessible)
   ^
 Heroku Cloud
   |- main.js (Socket.IO server)
