@@ -61,9 +61,9 @@ if USE_REAL_HARDWARE:
 
     import TimeTagger
 
-    logger.info("Hardware connected")
+    logger.info("Hardware mode: CONNECTED")
 else:
-    logger.info("Hardware not connected (simulation mode)")
+    logger.info("Simulation mode")
 
 
 def control_real_hardware(input_values):
