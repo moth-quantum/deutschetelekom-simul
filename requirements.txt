@@ -1,2 +1,2 @@
-numpy>=1.26.0
-requests>=2.31.0
+# Heroku deployment (simulation mode only — no hardware deps needed)
+# numpy and requests are not used in simulation mode

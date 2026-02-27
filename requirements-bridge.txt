@@ -1,4 +1,4 @@
-# Requirements for bridge.py (Windows machine only)
+# Windows bridge machine dependencies
 flask>=3.0.0
-flask-cors>=4.0.0
-requests>=2.31.0
+flask-cors>=5.0.0
+numpy>=2.0.0
