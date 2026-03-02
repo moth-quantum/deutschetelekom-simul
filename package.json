@@ -1,7 +1,7 @@
 {
-  "name": "deutschetelekom-simul",
+  "name": "T-LabsxMOTH",
   "version": "2.0.0",
-  "description": "Simulation Node.js app to support live audiovisual production",
+  "description": "Woring with ThorLabs hardware and TimeTagger, it will lead audiovisual interactions.",
   "main": "main.js",
   "scripts": {
     "start": "node main.js",

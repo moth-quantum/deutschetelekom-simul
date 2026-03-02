@@ -1,4 +1,4 @@
-require('dotenv').config();
+require('dotenv').config(); // for local testing only
 
 const express = require('express');
 const { createServer } = require('http');
