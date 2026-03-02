@@ -1,7 +1,7 @@
 {
   "name": "T-LabsxMOTH",
   "version": "2.0.0",
-  "description": "Woring with ThorLabs hardware and TimeTagger, it will lead audiovisual interactions.",
+  "description": "Woring with ThorLabs hardware and TimeTagger, it will lead audiovisual.",
   "main": "main.js",
   "scripts": {
     "start": "node main.js",
