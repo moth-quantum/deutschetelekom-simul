@@ -1,3 +1,0 @@
-# Heroku Python buildpack requires this file to install Python.
-# device_controller.py (simulation mode) uses stdlib only — no pip packages needed.
-# Bridge dependencies are managed via Poetry: poetry install --with bridge
