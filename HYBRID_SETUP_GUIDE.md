@@ -1,28 +1,28 @@
 # Hybrid Architecture Setup Guide
 
-## Overview: Your Network Setup
+## This is the workflow between TD and remote server & H/W.
 
-```
-My Mac (85.255.233.64 via VPN)
-  ↓ RoyalTSX Remote Desktop
-Windows Machine (172.20.118.125)
-  ├─ ThorLabs Polarizers (USB)
-  ├─ TimeTagger (USB)
-  ├─ bridge.py (runs here)
-  └─ device_controller.py (runs here)
-  
-  ↑ ngrok tunnel (makes it accessible to internet)
-  ↑
-Heroku Cloud (dt-moth.herokuapp.com)
-  ├─ main.js (Socket.IO server)
-  ├─ experiment.py (forwards to bridge if hardware mode)
-  └─ Web UI (mode toggle)
-  
-  ↓ Socket.IO
+```text
+VPN-connected remote connection
+  | RoyalTSX
+Windows Machine (T-Labs)
+  |- ThorLabs Polarizers
+  |- TimeTagger
+  |- bridge.py (connect)
+  +- device_controller.py (control)
+
+  ^ ngrok tunnel (makes H/W accessible)
+  ^
+Heroku Cloud
+  |- main.js (Socket.IO server)
+  |- device_controller.py (directly calls the control operations)
+  +- Website
+
+  | Socket.IO
 TouchDesigner
 ```
 
 ## How It Works
 
-1. **Simulation Mode:** Everything runs on simulation (which is deployed on Heroku)
-2. **Hardware Mode:** Heroku app forwards commands to Windows machine → Real hardware
+1. **Simulation Mode:** Everything runs through Heroku
+2. **Hardware Mode:** Heroku app forwards commands to T-Labs machine via bridge.py

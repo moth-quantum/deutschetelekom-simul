@@ -1,40 +1,34 @@
+require('dotenv').config(); // for local testing only
+
 const express = require('express');
 const { createServer } = require('http');
 const { Server } = require('socket.io');
 const { spawn } = require('child_process');
 const readline = require('readline');
-const fs = require('fs');
-const path = require('path');
 
 const app = express();
 const httpServer = createServer(app);
 const io = new Server(httpServer, {
   cors: {
-    origin: "*", // Allow TouchDesigner to connect
+    origin: "*",
     methods: ["GET", "POST"]
   }
 });
 
 const PORT = process.env.PORT || 3000;
 
-// Serve static files from 'public' directory
 app.use(express.static('public'));
 app.use(express.json());
 
-// ========================================
-// SIMPLE IN-MEMORY MODE STATE
-// ========================================
-let currentMode = { useRealHardware: false }; // Default: SIMULATION
+let currentMode = { useRealHardware: false };
 
-// API: Get current mode
 app.get('/api/mode', (req, res) => {
   res.json(currentMode);
 });
 
-// API: Check hardware bridge status (proxy to Windows machine)
 app.get('/api/hardware-status', async (req, res) => {
   const bridgeUrl = process.env.BRIDGE_URL;
-  
+
   if (!bridgeUrl) {
     return res.json({
       bridge_online: false,
@@ -42,64 +36,62 @@ app.get('/api/hardware-status', async (req, res) => {
       error: 'BRIDGE_URL not configured on Heroku'
     });
   }
-  
+
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
-    
+    const timeout = setTimeout(() => controller.abort(), 10000);
+
     const response = await fetch(`${bridgeUrl}/api/status`, {
       signal: controller.signal
     });
     clearTimeout(timeout);
-    
+
     if (!response.ok) {
       throw new Error(`Bridge returned ${response.status}`);
     }
-    
+
     const data = await response.json();
     res.json(data);
-    
+
   } catch (error) {
     res.json({
       bridge_online: false,
       hardware_connected: false,
-      error: error.name === 'AbortError' 
-        ? 'Bridge timeout - is ngrok running?' 
+      error: error.name === 'AbortError'
+        ? 'Bridge timeout - is ngrok running?'
         : `Bridge unreachable: ${error.message}`
     });
   }
 });
 
-// API: Set mode (broadcasts to all clients via Socket.IO)
 app.post('/api/mode', (req, res) => {
   const { useRealHardware } = req.body;
-  
+
   if (typeof useRealHardware !== 'boolean') {
     return res.status(400).json({ success: false, error: 'useRealHardware must be a boolean' });
   }
-  
+
   currentMode = { useRealHardware };
   console.log(`Mode changed to: ${useRealHardware ? 'HARDWARE' : 'SIMULATION'}`);
-  
-  // Restart Python process with new mode
+
   if (pythonProcess && io.engine.clientsCount > 0) {
     console.log('Restarting Python process with new mode...');
-    pythonProcess.kill();
+    const proc = pythonProcess;
     pythonProcess = null;
-    // Will auto-restart with new env var when next data comes in
+    if (restartTimeout) {
+      clearTimeout(restartTimeout);
+      restartTimeout = null;
+    }
+    proc.kill();
   }
-  
-  // Broadcast mode change to all connected clients
+
   io.emit('mode_changed', currentMode);
-  
   res.json({ success: true, useRealHardware });
 });
 
-// Store active Python process
 let pythonProcess = null;
+let restartTimeout = null;
 
-// Function to start Python script and stream data
-// REMOVED 'socket' parameter
 function startPythonStream() {
   if (pythonProcess) {
     console.log('Python process already running');
@@ -107,39 +99,32 @@ function startPythonStream() {
   }
 
   console.log('Starting Python script...');
-  const args = ['experiment.py'];
-  
-  // Pass current mode to Python via environment variable
+
   const pythonEnv = {
     ...process.env,
     USE_REAL_HARDWARE: currentMode.useRealHardware.toString()
   };
-  
-  pythonProcess = spawn('python', args, { env: pythonEnv });
-  
-  // Handle spawn errors
+
+  pythonProcess = spawn('python', ['device_controller.py'], { env: pythonEnv });
+
   pythonProcess.on('error', (err) => {
     console.error('Failed to start Python process:', err);
     pythonProcess = null;
   });
 
-  // --- FIXED: Use readline to handle stream buffering ---
   const rl = readline.createInterface({ input: pythonProcess.stdout });
 
   rl.on('line', (line) => {
     try {
       const parsed = JSON.parse(line);
       console.log('Emitting data:', parsed);
-      // Emit to all connected clients (TouchDesigner)
       io.emit('numerical_data', parsed);
     } catch (e) {
-      console.warn('Python script produced non-JSON line:', line);
+      console.warn('Non-JSON output from Python:', line);
     }
   });
-  // --- End of readline fix ---
 
   pythonProcess.stderr.on('data', (data) => {
-    // FIXED: Convert buffer to string
     const errorMsg = data.toString();
     console.error(`Python stderr: ${errorMsg}`);
     io.emit('error', { message: errorMsg });
@@ -147,69 +132,63 @@ function startPythonStream() {
 
   pythonProcess.on('exit', (code) => {
     console.log(`Python script exited with code ${code}`);
+    const wasIntentional = (pythonProcess === null);
     pythonProcess = null;
-    
-    // FIXED: Only restart if clients are still connected
-    if (io.engine.clientsCount > 0) {
-      console.log('Clients still connected, restarting script in 2s...');
-      setTimeout(startPythonStream, 2000); // No 'socket' passed
+
+    if (!wasIntentional && io.engine.clientsCount > 0) {
+      console.log('Unexpected exit, restarting in 2s...');
+      if (restartTimeout) clearTimeout(restartTimeout);
+      restartTimeout = setTimeout(() => {
+        restartTimeout = null;
+        startPythonStream();
+      }, 2000);
     }
   });
 }
 
-// Socket.IO connection handling
 io.on('connection', (socket) => {
-  console.log('TouchDesigner client connected:', socket.id);
-  
-  // Start Python data stream if it's not already running
+  console.log('Client connected:', socket.id);
+
   if (!pythonProcess) {
-    startPythonStream(); // No 'socket' passed
+    startPythonStream();
   }
 
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
-    
-    // Stop Python process when no clients are connected
+
     if (io.engine.clientsCount === 0 && pythonProcess) {
       console.log('Last client disconnected, stopping Python process.');
-      pythonProcess.kill();
+      const proc = pythonProcess;
       pythonProcess = null;
+      if (restartTimeout) {
+        clearTimeout(restartTimeout);
+        restartTimeout = null;
+      }
+      proc.kill();
     }
   });
 
-  // Sending data from a MIDI knob controller values to the server
+  // TouchDesigner sends { "knob_values": [v1, v2, v3] }
   socket.on('knobs', (data) => {
-    // 'data' is passed as-is to experiment.py (ensure TouchDesigner sends { "knobs": [...] })
-    
     if (pythonProcess && pythonProcess.stdin) {
       try {
-        // Convert the JSON object back to a string
-        const dataString = JSON.stringify(data);
-        
-        // Write it to the Python script's standard input
-        // The '\n' is CRITICAL - it tells Python it's a new line
-        pythonProcess.stdin.write(dataString + '\n');
-        
-        // Optional: log it
-        console.log('Sent to Python:', dataString);
-        
+        // Newline delimiter is required for Python's stdin line reader
+        pythonProcess.stdin.write(JSON.stringify(data) + '\n');
+        console.log('Sent to Python:', JSON.stringify(data));
       } catch (e) {
         console.error('Failed to send data to Python:', e);
       }
     }
   });
 
-  // Allow TouchDesigner to request data
   socket.on('request_data', () => {
     console.log('Data requested by client');
     if (!pythonProcess) {
-      startPythonStream(); // No 'socket' passed
+      startPythonStream();
     }
   });
 });
 
 httpServer.listen(PORT, () => {
   console.log(`Socket.IO server running on port ${PORT}`);
-  // Simplified this log, as the Heroku URL is just the app's URL
-  console.log(`Connect TouchDesigner to your Heroku app's https://... URL`);
 });
