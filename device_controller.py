@@ -162,7 +162,6 @@ def get_coincidences(channel_pairs, runtime=2, binwidth_ps=BINWIDTH_PS):
             max_counts = np.max(hist)
             results[(ch1, ch2)] = max_counts
             logger.debug("%d-%d: %s", ch1, ch2, max_counts)
-            del corr
 
     except Exception:
         logger.exception("Parallel coincidence measurement error")

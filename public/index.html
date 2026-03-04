@@ -105,9 +105,14 @@
                     ? badge('Online', 'ok')
                     : badge('Offline', 'err');
 
-                hardwareStatus.innerHTML = data.hardware_connected
-                    ? badge('Connected (' + data.device_id + ')', 'ok')
-                    : badge('Not connected', 'err');
+                if (data.hardware_connected) {
+                    hardwareStatus.innerHTML = badge('Connected', 'ok');
+                    if (data.device_id) {
+                        hardwareStatus.innerHTML = badge('Connected (' + data.device_id.toString().replace(/[<>&"']/g, '') + ')', 'ok');
+                    }
+                } else {
+                    hardwareStatus.innerHTML = badge('Not connected', 'err');
+                }
 
                 if (data.error) {
                     hardwareError.textContent = data.error;
