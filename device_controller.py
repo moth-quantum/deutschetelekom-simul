@@ -72,7 +72,6 @@ def control_real_hardware(input_values):
 
     Input: 3 paddle angles from TouchDesigner (0-170 degrees)
     Output: 4 coincidence peak values for channel pairs (5,6), (8,7), (5,7), (8,6)
-    # c.f. Coincidence counts: 120, 350, 30, 1.6?k
     """
     try:
         DeviceManagerCLI.BuildDeviceList()
@@ -118,7 +117,7 @@ def control_real_hardware(input_values):
         return list(ZERO_PEAKS)
 
 
-def get_coincidences(channel_pairs, runtime=2, binwidth_ps=BINWIDTH_PS):
+def get_coincidences(channel_pairs, runtime=3, binwidth_ps=BINWIDTH_PS):
     """
     Measure all coincidences in parallel using a single TimeTagger instance.
 
