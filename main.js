@@ -39,7 +39,7 @@ app.get('/api/hardware-status', async (req, res) => {
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 60000); // Is there any wiser way to deal with this?
 
     const response = await fetch(`${bridgeUrl}/api/status`, {
       signal: controller.signal
