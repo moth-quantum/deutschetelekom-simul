@@ -70,9 +70,12 @@ def execute_hardware():
         knob_values = data['knob_values']
         logger.info("Received from Heroku: %s", knob_values)
 
+        import time as _time
+        t_bridge = _time.time()
         peaks = control_real_hardware(knob_values)
         output_data = {'entanglement': peaks}
 
+        logger.info("[TIMING] Bridge total (receive → respond): %.3fs", _time.time() - t_bridge)
         logger.info("Returning to Heroku: %s", output_data)
 
         return jsonify({
@@ -125,14 +128,5 @@ def status():
 
 
 if __name__ == '__main__':
-    logger.info("=" * 50)
-    logger.info("LOCAL HARDWARE BRIDGE")
-    logger.info("Local IP: %s | Port: %d", LOCAL_IP, PORT)
-    logger.info("Setup: ngrok http %d -> set BRIDGE_URL on Heroku -> toggle hardware mode", PORT)
-    logger.info("=" * 50)
-
-    app.run(
-        host='0.0.0.0',
-        port=PORT,
-        debug=False
-    )
+    from waitress import serve
+    serve(app, host='0.0.0.0', port=PORT)
