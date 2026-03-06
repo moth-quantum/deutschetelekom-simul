@@ -70,9 +70,12 @@ def execute_hardware():
         knob_values = data['knob_values']
         logger.info("Received from Heroku: %s", knob_values)
 
+        import time as _time
+        t_bridge = _time.time()
         peaks = control_real_hardware(knob_values)
         output_data = {'entanglement': peaks}
 
+        logger.info("[TIMING] Bridge total (receive → respond): %.3fs", _time.time() - t_bridge)
         logger.info("Returning to Heroku: %s", output_data)
 
         return jsonify({

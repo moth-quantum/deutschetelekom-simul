@@ -74,13 +74,18 @@ def control_real_hardware(input_values):
     Output: 4 coincidence peak values for channel pairs (5,6), (8,7), (5,7), (8,6)
     """
     try:
+        t_total = time.time()
+
+        t0 = time.time()
         DeviceManagerCLI.BuildDeviceList()
         device = Polarizer.CreatePolarizer(DEVICE_ID)
         device.Connect(DEVICE_ID)
         device.WaitForSettingsInitialized(DEFAULT_TIMEOUT_MS)
         device.StartPolling(DEFAULT_TIMEOUT_MS)
         time.sleep(0.5)
+        logger.info("[TIMING] Device connect + init: %.3fs", time.time() - t0)
 
+        t0 = time.time()
         vel_params = device.GetPolParams()
         vel_params.Velocity = VELOCITY_PERCENT
         device.SetPolParams(vel_params)
@@ -92,9 +97,9 @@ def control_real_hardware(input_values):
 
         for i in range(NUM_PADDLES):
             device.MoveTo(positions[i], paddles[i], DEFAULT_TIMEOUT_MS)
+        logger.info("[TIMING] Move paddles to [%s, %s, %s]: %.3fs", angle1, angle2, angle3, time.time() - t0)
 
-        logger.info("Moved paddles to: [%s, %s, %s]", angle1, angle2, angle3)
-
+        t0 = time.time()
         try:
             results = get_coincidences(CHANNEL_PAIRS, runtime=COINCIDENCE_RUNTIME_S)
             peaks = [results[pair] for pair in CHANNEL_PAIRS]
@@ -102,12 +107,19 @@ def control_real_hardware(input_values):
         except Exception as e:
             logger.error("Coincidence counting error: %s", e)
             peaks = list(ZERO_PEAKS)
+        logger.info("[TIMING] Coincidence measurement: %.3fs", time.time() - t0)
 
+        t0 = time.time()
         for i in range(NUM_PADDLES):
             device.MoveTo(Decimal(0), paddles[i], DEFAULT_TIMEOUT_MS)
+        logger.info("[TIMING] Reset paddles to zero: %.3fs", time.time() - t0)
 
+        t0 = time.time()
         device.StopPolling()
         device.Disconnect()
+        logger.info("[TIMING] Disconnect: %.3fs", time.time() - t0)
+
+        logger.info("[TIMING] Total hardware execution: %.3fs", time.time() - t_total)
 
         peaks = [int(p) for p in peaks]
         return peaks
