@@ -178,9 +178,7 @@ function startPythonStream() {
   });
 
   pythonProcess.stderr.on('data', (data) => {
-    const errorMsg = data.toString();
-    console.error(`Python stderr: ${errorMsg}`);
-    io.emit('error', { message: errorMsg });
+    console.error(`Python stderr: ${data.toString()}`);
   });
 
   pythonProcess.on('exit', (code) => {
