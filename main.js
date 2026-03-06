@@ -39,7 +39,7 @@ app.get('/api/hardware-status', async (req, res) => {
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60000); // Is there any wiser way to deal with this?
+    const timeout = setTimeout(() => controller.abort(), 10000);
 
     const response = await fetch(`${bridgeUrl}/api/status`, {
       signal: controller.signal
@@ -112,7 +112,7 @@ async function forwardToBridge(data, socket) {
 
   try {
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000);
+    const timeout = setTimeout(() => controller.abort(), 60000); // Is there any wiser way to deal with this?
 
     const response = await fetch(`${bridgeUrl}/api/hardware/execute`, {
       method: 'POST',
