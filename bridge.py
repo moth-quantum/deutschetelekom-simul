@@ -128,14 +128,5 @@ def status():
 
 
 if __name__ == '__main__':
-    logger.info("=" * 50)
-    logger.info("LOCAL HARDWARE BRIDGE")
-    logger.info("Local IP: %s | Port: %d", LOCAL_IP, PORT)
-    logger.info("Setup: ngrok http %d -> set BRIDGE_URL on Heroku -> toggle hardware mode", PORT)
-    logger.info("=" * 50)
-
-    app.run(
-        host='0.0.0.0',
-        port=PORT,
-        debug=False
-    )
+    from waitress import serve
+    serve(app, host='0.0.0.0', port=PORT)
