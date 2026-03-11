@@ -74,8 +74,7 @@ app.post('/api/mode', (req, res) => {
   currentMode = { useRealHardware };
   console.log(`Mode changed to: ${useRealHardware ? 'HARDWARE' : 'SIMULATION'}`);
 
-  if (pythonProcess && io.engine.clientsCount > 0) {
-    console.log('Restarting Python process with new mode...');
+  if (pythonProcess) {
     const proc = pythonProcess;
     pythonProcess = null;
     if (restartTimeout) {
@@ -85,12 +84,66 @@ app.post('/api/mode', (req, res) => {
     proc.kill();
   }
 
+  if (!useRealHardware && io.engine.clientsCount > 0) {
+    startPythonStream();
+  }
+
   io.emit('mode_changed', currentMode);
   res.json({ success: true, useRealHardware });
 });
 
 let pythonProcess = null;
 let restartTimeout = null;
+let bridgeRequestPending = false;
+
+async function forwardToBridge(data, socket) {
+  const bridgeUrl = process.env.BRIDGE_URL;
+
+  if (!bridgeUrl) {
+    return socket.emit('error', { message: 'BRIDGE_URL not configured' });
+  }
+
+  if (!Array.isArray(data.knob_values)) {
+    return socket.emit('error', { message: 'Invalid knob_values' });
+  }
+
+  if (bridgeRequestPending) return;
+  bridgeRequestPending = true;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 60000); // Is there any wiser way to deal with this?
+
+    const response = await fetch(`${bridgeUrl}/api/hardware/execute`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ knob_values: data.knob_values }),
+      signal: controller.signal
+    });
+    clearTimeout(timeout);
+
+    if (!response.ok) {
+      throw new Error(`Bridge returned ${response.status}`);
+    }
+
+    const result = await response.json();
+
+    if (result.success && result.data) {
+      io.emit('numerical_data', result.data);
+    } else {
+      socket.emit('error', { message: result.error || 'Bridge error' });
+    }
+
+  } catch (error) {
+    const message = error.name === 'AbortError'
+      ? 'Bridge timeout - is ngrok running?'
+      : `Bridge unreachable: ${error.message}`;
+    console.error('Bridge forwarding error:', message);
+    socket.emit('error', { message });
+  } finally {
+    bridgeRequestPending = false;
+  }
+}
 
 function startPythonStream() {
   if (pythonProcess) {
@@ -102,7 +155,7 @@ function startPythonStream() {
 
   const pythonEnv = {
     ...process.env,
-    USE_REAL_HARDWARE: currentMode.useRealHardware.toString()
+    USE_REAL_HARDWARE: 'false'
   };
 
   pythonProcess = spawn('python', ['device_controller.py'], { env: pythonEnv });
@@ -125,9 +178,7 @@ function startPythonStream() {
   });
 
   pythonProcess.stderr.on('data', (data) => {
-    const errorMsg = data.toString();
-    console.error(`Python stderr: ${errorMsg}`);
-    io.emit('error', { message: errorMsg });
+    console.error(`Python stderr: ${data.toString()}`);
   });
 
   pythonProcess.on('exit', (code) => {
@@ -149,7 +200,7 @@ function startPythonStream() {
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
 
-  if (!pythonProcess) {
+  if (!pythonProcess && !currentMode.useRealHardware) {
     startPythonStream();
   }
 
@@ -170,23 +221,39 @@ io.on('connection', (socket) => {
 
   // TouchDesigner sends { "knob_values": [v1, v2, v3] }
   socket.on('knobs', (data) => {
-    if (pythonProcess && pythonProcess.stdin) {
+    if (currentMode.useRealHardware) {
+      forwardToBridge(data, socket).catch((err) => {
+        console.error('Error on the bridge side: ', err);
+      });
+    } else if (pythonProcess && pythonProcess.stdin) {
       try {
-        // Newline delimiter is required for Python's stdin line reader
         pythonProcess.stdin.write(JSON.stringify(data) + '\n');
-        console.log('Sent to Python:', JSON.stringify(data));
       } catch (e) {
-        console.error('Failed to send data to Python:', e);
+        console.error('Failed to write to Python: ', e);
       }
     }
   });
 
   socket.on('request_data', () => {
     console.log('Data requested by client');
-    if (!pythonProcess) {
+    if (!pythonProcess && !currentMode.useRealHardware) {
       startPythonStream();
     }
   });
+});
+
+process.on('SIGTERM', () => {
+  console.log('SIGTERM received, shutting down...');
+  if (restartTimeout) {
+    clearTimeout(restartTimeout);
+    restartTimeout = null;
+  }
+  if (pythonProcess) {
+    const proc = pythonProcess;
+    pythonProcess = null;
+    proc.kill();
+  }
+  httpServer.close(() => process.exit(0));
 });
 
 httpServer.listen(PORT, () => {
